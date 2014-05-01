@@ -3,6 +3,7 @@ package storm.blueprint.buffer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,7 @@ import java.util.List;
  * Date: 4/21/14
  * Time: 11:32 AM
  */
-public class IncrementalSlidingWindowBuffer extends TupleBuffer {
+public class IncrementalSlidingWindowBuffer extends TupleBuffer implements Serializable{
 
     public void setCallback(IncrementalWindowCallback callback) {
         this.callback = callback;
@@ -90,7 +91,7 @@ public class IncrementalSlidingWindowBuffer extends TupleBuffer {
         if (callback != null) {
             Fields selectFields = callback.getInputFields();
             List<List<Object>> oldValues = new ArrayList<List<Object>>();
-            for (int i=(head-pace)%capacity; i!=head; i=(i+1)%capacity) {
+            for (int i=(head-pace+capacity)%capacity; i!=head; i=(i+1)%capacity) {
                 List<Object> tupleSelected = tuples[i].select(selectFields);
                 oldValues.add(tupleSelected);
             }

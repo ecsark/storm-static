@@ -427,7 +427,7 @@
         storm-conf (read-storm-conf conf storm-id)
         topology (read-storm-topology conf storm-id)
         task->component (storm-task-info topology storm-conf)
-        operator-set (parse-operator-set topology)
+        ;;operator-set (parse-operator-set topology)
         blueprint (.get storm-conf "blueprint")]
 
     (if (not-nil? blueprint)

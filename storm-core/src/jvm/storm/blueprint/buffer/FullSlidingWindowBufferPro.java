@@ -3,7 +3,6 @@ package storm.blueprint.buffer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,9 +11,11 @@ import java.util.List;
  * Date: 4/21/14
  * Time: 11:19 AM
  */
-public class FullSlidingWindowBuffer extends TupleBuffer implements Serializable {
+public class FullSlidingWindowBufferPro extends TupleBuffer {
 
-    private FullWindowCallback callback;
+    private List<FullWindowCallback> callbacks;
+    private List<Integer> callbackStep;
+    private List<Integer> callbackCounter;
 
     protected Tuple[] tuples;
     protected int windowLength;
@@ -43,7 +44,7 @@ public class FullSlidingWindowBuffer extends TupleBuffer implements Serializable
     }
 
 
-    public FullSlidingWindowBuffer(int windowLength, int pace) {
+    public FullSlidingWindowBufferPro(int windowLength, int pace) {
         assert(windowLength>0);
         tuples = new Tuple[windowLength];
         this.windowLength = windowLength;
@@ -52,9 +53,12 @@ public class FullSlidingWindowBuffer extends TupleBuffer implements Serializable
         size = 0;
         step = 0;
         this.pace = pace;
+        callbacks = new ArrayList<FullWindowCallback>();
+        callbackCounter = new ArrayList<Integer>();
+        callbackStep = new ArrayList<Integer>();
     }
 
-    public FullSlidingWindowBuffer(int windowLength) {
+    public FullSlidingWindowBufferPro(int windowLength) {
         this(windowLength, 1);
     }
 
@@ -75,11 +79,33 @@ public class FullSlidingWindowBuffer extends TupleBuffer implements Serializable
         }
     }
 
-    public void setCallback(FullWindowCallback callback) {
-        this.callback = callback;
+    public void addCallback(FullWindowCallback callback, int pace) {
+        callbacks.add(callback);
+        if (pace < 1)
+            throw new IllegalArgumentException("Pace should be an integer greater than 0");
+        callbackStep.add(pace);
+        callbackCounter.add(0);
     }
 
+    public void addCallback(FullWindowCallback callback) {
+        addCallback(callback, 1);
+    }
+
+
     private void onWindowFull() {
+
+        for (int i=0; i<callbacks.size(); ++i) {
+            FullWindowCallback callback = callbacks.get(i);
+            int counter = callbackCounter.get(i) + 1;
+            if (counter == callbackStep.get(i)) {
+                provokeCallback(callback);
+            }
+            callbackCounter.set(i, counter%callbackStep.get(i));
+        }
+    }
+
+
+    private void provokeCallback(FullWindowCallback callback) {
         if (callback != null) {
             Fields selectFields = callback.getInputFields();
             List<List<Object>> objs = new ArrayList<List<Object>>();

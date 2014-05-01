@@ -2,6 +2,7 @@ package storm.blueprint.buffer;
 
 import backtype.storm.tuple.Fields;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
  * Date: 4/20/14
  * Time: 11:59 AM
  */
-public interface FullWindowCallback {
+public interface FullWindowCallback extends Serializable{
 
     void process(List<List<Object>> tuples);
 

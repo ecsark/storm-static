@@ -1,10 +1,8 @@
 package storm.blueprint;
 
-import storm.blueprint.function.Average;
-import storm.blueprint.function.FunctionNotSupportedException;
-import storm.blueprint.function.Functional;
-import storm.blueprint.function.RootMeanSquare;
+import storm.blueprint.function.*;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +11,7 @@ import java.util.Map;
  * Date: 4/21/14
  * Time: 6:11 PM
  */
-public class FunctionFactory {
+public class FunctionFactory implements Serializable{
 
     Map<String, Class<? extends Functional>> registry;
 
@@ -29,6 +27,8 @@ public class FunctionFactory {
     private void registerFunction () {
         registry.put("avg", Average.class);
         registry.put("rms", RootMeanSquare.class);
+        registry.put("dev", StandardDeviation.class);
+        registry.put("max", Max.class);
     }
 
     public Functional getFunction(String name) throws FunctionNotSupportedException {

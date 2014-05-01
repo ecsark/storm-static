@@ -9,7 +9,7 @@ import java.util.List;
  * Date: 4/21/14
  * Time: 1:32 PM
  */
-public class Average implements Functional, Incremental{
+public class Average implements Functional, Incremental {
 
     private double sum(List<List<Object>> input) {
         double s = 0.0;

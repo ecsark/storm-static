@@ -5,6 +5,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ import java.util.List;
     A Tuple implementation written for hierarchical TupleBuffer.
      Field is not supported.
  */
-public class FakeTuple implements Tuple {
+public class FakeTuple implements Tuple, Serializable {
 
     List<Object> values;
 

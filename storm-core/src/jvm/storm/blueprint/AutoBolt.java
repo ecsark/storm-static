@@ -23,7 +23,7 @@ public class AutoBolt extends BaseBasicBolt {
     Functional function;
     Fields outputFields;
     Fields inputFields;
-    String name;
+    String boltName;
 
     Values state;
 
