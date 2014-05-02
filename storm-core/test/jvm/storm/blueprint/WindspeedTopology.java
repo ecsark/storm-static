@@ -1,9 +1,10 @@
 package storm.blueprint;
 
 import backtype.storm.Config;
+import backtype.storm.ILocalCluster;
+import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.LocalCluster;
 
 /**
  * User: ecsark
@@ -16,7 +17,7 @@ public class WindspeedTopology {
     public static void main (String[] args) throws Exception{
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        builder.setBolt("avg", WindSpeedBoltsReuse.setUpAVGBolts(), 2).shuffleGrouping("spout");
+        builder.setBolt("avg", WindSpeedBoltsReuse.setUpAVGBolts(), 1).shuffleGrouping("spout");
 
         Config conf = new Config();
         conf.setDebug(true);
@@ -29,7 +30,7 @@ public class WindspeedTopology {
         } else {
             //conf.setMaxTaskParallelism(3);
             System.out.println("Using Local");
-            LocalCluster cluster = new LocalCluster();
+            ILocalCluster cluster = new LocalCluster();
             cluster.submitTopology("windspeed", conf, builder.createTopology());
 
             Thread.sleep(120000);

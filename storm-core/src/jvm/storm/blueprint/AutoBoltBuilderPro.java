@@ -52,6 +52,12 @@ public class AutoBoltBuilderPro implements Serializable {
     public AutoBoltBuilderPro addTupleBuffer (String outputStreamId, int windowLength, int pace, String functionName,
                                               String windowType)
             throws FunctionNotSupportedException, BufferTypeNotSupportedException {
+        return addTupleBuffer(outputStreamId, windowLength, pace, functionName, windowType, true);
+    }
+
+    public AutoBoltBuilderPro addTupleBuffer (String outputStreamId, int windowLength, int pace, String functionName,
+                                              String windowType, boolean emitting)
+            throws FunctionNotSupportedException, BufferTypeNotSupportedException {
 
         BufferStack stack = new BufferStack();
         stack.function = ff.getFunction(functionName);
@@ -62,10 +68,10 @@ public class AutoBoltBuilderPro implements Serializable {
             throw new IllegalArgumentException("Window length and pace should be greater than 0");
 
         if (windowType.toLowerCase().equals(FULL_WINDOW)) {
-            stack.buffer = createFullSlidingWindowBuffer(windowLength, pace, stack, _bolt);
+            stack.buffer = createFullSlidingWindowBuffer(windowLength, pace, stack, _bolt, emitting);
 
         } else if (windowType.toLowerCase().equals(INCREMENTAL_WINDOW)) {
-            stack.buffer = createIncrementalSlidingWindowBuffer(windowLength, pace, stack, _bolt);
+            stack.buffer = createIncrementalSlidingWindowBuffer(windowLength, pace, stack, _bolt, emitting);
 
         } else {
             throw new BufferTypeNotSupportedException(windowType + " is not supported");
@@ -89,14 +95,16 @@ public class AutoBoltBuilderPro implements Serializable {
 
     private FullSlidingWindowBuffer createFullSlidingWindowBuffer(int windowLength, int pace,
                                                                   final BufferStack stack,
-                                                                  final AutoBoltPro bolt) {
+                                                                  final AutoBoltPro bolt,
+                                                                  final boolean emitting) {
         FullSlidingWindowBuffer buffer = new FullSlidingWindowBuffer(windowLength, pace);
         buffer.setCallback(new FullWindowCallback() {
 
             @Override
             public void process(List<List<Object>> tuples) {
                 Values result = stack.function.apply(tuples);
-                bolt.collector.emit(stack.outputStreamId, new Values(result.get(0)));
+                if (emitting)
+                    bolt.collector.emit(stack.outputStreamId, new Values(result.get(0)));
                 stack.propagate(result);
             }
 
@@ -111,7 +119,8 @@ public class AutoBoltBuilderPro implements Serializable {
 
     private IncrementalSlidingWindowBuffer createIncrementalSlidingWindowBuffer(int windowLength, int pace,
                                                                                 final BufferStack stack,
-                                                                                final AutoBoltPro bolt) {
+                                                                                final AutoBoltPro bolt,
+                                                                                final boolean emitting) {
         IncrementalSlidingWindowBuffer buffer = new IncrementalSlidingWindowBuffer(windowLength, pace);
 
         buffer.setCallback(new IncrementalWindowCallback() {
@@ -120,7 +129,8 @@ public class AutoBoltBuilderPro implements Serializable {
             @Override
             public void process(List<List<Object>> newTuples, List<List<Object>> oldTuples) {
                 stack.state = ((Incremental) stack.function).update(newTuples, oldTuples, stack.state);
-                bolt.collector.emit(stack.outputStreamId, new Values(stack.state.get(0)));
+                if (emitting)
+                    bolt.collector.emit(stack.outputStreamId, new Values(stack.state.get(0)));
                 stack.propagate(stack.state);
             }
 
