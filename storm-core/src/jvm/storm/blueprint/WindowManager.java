@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class WindowManager {
 
-    private SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
+    SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
 
     public WindowManager() {
         windows = new TreeMap<Integer, PaceGroup>(Collections.reverseOrder());
@@ -24,15 +24,23 @@ public class WindowManager {
     }
 
     public void consolidate () {
+
+        List<Integer> markToDelete = new ArrayList<Integer>();
+
         for (int pace : windows.keySet()) {
             for (int p : windows.keySet()) {
                 if (pace%p==0 && pace>p) {
                     windows.get(p).merge(windows.get(pace));
-                    windows.remove(pace);
+                    markToDelete.add(pace);
                     break;
                 }
             }
         }
+
+        for (int pace : markToDelete) {
+            windows.remove(pace);
+        }
+
         for (PaceGroup paceGroup : windows.values()) {
             paceGroup.organize();
         }

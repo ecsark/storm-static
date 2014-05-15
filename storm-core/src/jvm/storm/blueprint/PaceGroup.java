@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class PaceGroup implements Serializable{
 
-    List<PaceItem> items;
+    List<WindowItem> windows;
 
     List<UseLink> links;
 
@@ -19,19 +19,19 @@ public class PaceGroup implements Serializable{
     int basePace;
 
     public PaceGroup () {
-        items = new ArrayList<PaceItem>();
+        windows = new ArrayList<WindowItem>();
         registry = new HashMap<Integer, List<ResultDeclaration>>();
         links = new ArrayList<UseLink>();
     }
 
     public void add(String id, int windowLength, int pace) {
-        items.add(new PaceItem(id, windowLength, pace));
+        windows.add(new WindowItem(id, windowLength, pace));
     }
 
     public void sort () { // sort in the ascending order of <pace, windowLength>
-        Collections.sort(items, new Comparator<PaceItem>() {
+        Collections.sort(windows, new Comparator<WindowItem>() {
             @Override
-            public int compare(PaceItem o1, PaceItem o2) {
+            public int compare(WindowItem o1, WindowItem o2) {
                 if (o1.pace == o2.pace)
                     return o1.windowLength - o2.windowLength;
                 return o1.pace - o2.pace;
@@ -40,26 +40,27 @@ public class PaceGroup implements Serializable{
     }
 
     public void merge(PaceGroup another) {
-        items.addAll(another.items);
+        windows.addAll(another.windows);
     }
 
     // make sure there are no duplicate declarations
-    private void register (int length, int start, int freq, String componentId) {
-        if (!registry.containsKey(start)) {
+    private boolean register (int length, int start, int pace, String windowId) {
+        if (!registry.containsKey(start%basePace)) {
             registry.put(start, new ArrayList<ResultDeclaration>());
         }
-        List<ResultDeclaration> reg = registry.get(start);
+        List<ResultDeclaration> reg = registry.get(start%basePace);
 
         for (ResultDeclaration declaration : reg) {
-            if (declaration.length==length && declaration.freq==freq) {
-                return;
+            if (declaration.length==length && declaration.pace==pace && declaration.start==start%pace) {
+                return false;
             }
         }
-        reg.add(new ResultDeclaration(length, start, freq, componentId));
+        reg.add(new ResultDeclaration(length, start%pace, pace, windowId));
+        return true;
 
     }
 
-    private ResultDeclaration findBestMatchingResult (int length, int start, int freq) {
+    private ResultDeclaration findBestMatchingResult (int length, int start, int pace) {
 
         ResultDeclaration match = null;
 
@@ -69,12 +70,14 @@ public class PaceGroup implements Serializable{
                 2) identical start point
                 3) pace being a divisor of the one of expected
          */
-        if (registry.containsKey(start)) {
+
+        if (registry.containsKey(start%basePace)) {
 
             int maxLength = -1;
 
-            for (ResultDeclaration res : registry.get(start)) {
-                if (res.length > maxLength && freq % res.freq == 0 && res.length <= length) {
+            for (ResultDeclaration res : registry.get(start%basePace)) {
+                if (res.length > maxLength && pace%res.pace == 0 && res.length <= length
+                        && start%res.pace == res.start) {
                     maxLength = res.length;
                     match = res;
                 }
@@ -85,7 +88,7 @@ public class PaceGroup implements Serializable{
     }
 
     private void sanityCheck () {
-        for (PaceItem item : items) {
+        for (WindowItem item : windows) {
             if (item.pace%basePace != 0)
                 throw new RuntimeException("Window of pace " + Integer.toString(item.pace) +
                 "should not be placed in PaceGroup " + Integer.toString(basePace));
@@ -95,16 +98,16 @@ public class PaceGroup implements Serializable{
 
     private void setUpBase () {
 
-        if (items.size() > 0) {
+        if (windows.size() > 0) {
             sort();
-            basePace = items.get(0).pace;
+            basePace = windows.get(0).pace;
             sanityCheck();
         }
 
         registry.clear();
 
         Set<Integer> separator = new HashSet<Integer>();
-        for (PaceItem item : items) {
+        for (WindowItem item : windows) {
             separator.add(item.windowLength % basePace);
         }
 
@@ -121,14 +124,35 @@ public class PaceGroup implements Serializable{
 
         for (int i=0; i<sep.size()-1; ++i) {
             register(sep.get(i+1)-sep.get(i), sep.get(i),
-                    basePace, "__base_"+Integer.toString(i)+"__");
+                    basePace, "____");
         }
+
+        // register a complete pace
+        register(basePace, 0, basePace, "____");
 
     }
 
+    private void construct(WindowItem item) {
 
-    private void partialAggregate (PaceItem item, int startingIndex, int endingIndex) {
+        int start = 0, length = item.windowLength, pace = item.pace;
 
+        while (start < length) {
+            ResultDeclaration match = findBestMatchingResult(length-start, start, pace);
+            if (match == null) {
+                //TODO: should there always be one found?
+                throw new RuntimeException();
+            }
+            links.add(new UseLink(item.id, match, start, pace));
+            start += match.length;
+        }
+    }
+
+
+    private void partialAggregate (WindowItem item, int startingIndex, int endingIndex) {
+
+        /*
+            Parts eligible for declaration: a, b, pace, window
+         */
         int position = 0;
         boolean open = false;
         int lastPosition = 0;
@@ -136,10 +160,15 @@ public class PaceGroup implements Serializable{
         int a = item.windowLength % item.pace;
 
         for (int i=startingIndex; i<endingIndex; ++i) {
-            position += links.get(i).length;
+            position += links.get(i).part.length;
+            if (position > item.pace) {
+                //break;
+            }
+
+            // register a, b or pace
             if (position%item.pace==0 || position%item.pace==a) {
                 if (open) {
-                    register(position - lastPosition, lastPosition % basePace, item.pace, item.id);
+                    register(position-lastPosition, lastPosition, item.pace, item.id);
                     open = false;
                 }
                 lastPosition = position;
@@ -147,82 +176,83 @@ public class PaceGroup implements Serializable{
                 open = true;
             }
         }
+
+        // register window
+        register(item.windowLength, 0, item.pace, item.id);
     }
+
 
     public void organize () {
 
         setUpBase();
 
         links.clear();
-        for (PaceItem item : items) {
-
-            int start = 0, length = item.windowLength, freq = item.pace;
+        for (WindowItem item : windows) {
 
             int startingIndex = links.size();
-
-            while (start < length) {
-                ResultDeclaration match = findBestMatchingResult(length-start, start%basePace, freq);
-                if (match == null) {
-                    //TODO: should there be always one found?
-                    throw new RuntimeException();
-                }
-                links.add(new UseLink(match.componentId, item.id, Parts.RESULT, match.length, freq));
-                start += match.length;
-            }
+            construct(item);
 
             // register partial result
             partialAggregate(item, startingIndex, links.size());
-
-            // register result
-            register(item.windowLength, 0, item.pace, item.id);
-
         }
     }
 
 }
 
-class PaceItem implements Serializable {
+class WindowItem implements Serializable {
     String id;
     int windowLength;
     int pace;
 
-    PaceItem (String id, int windowLength, int pace) {
+    WindowItem(String id, int windowLength, int pace) {
         this.id = id;
         this.windowLength = windowLength;
         this.pace = pace;
     }
+
+    @Override
+    public String toString() {
+        return id +": "+Integer.toString(windowLength)+"/"+Integer.toString(pace);
+    }
 }
 
-enum Parts {
-    A, B, RESULT, REUSED,
-}
 
 class UseLink implements Serializable {
-    String from, to;
-    Parts part;
-    int freq;
-    int length;
+    String dest;
+    ResultDeclaration part;
+    int start; //position in the receiver
+    int index; //the index of the component, which will be set later
+    int pace; //receiving frequency
 
-    UseLink (String from, String to, Parts part, int length, int freq) {
-        this.from = from;
-        this.to = to;
+    UseLink (String dest, ResultDeclaration part, int start, int pace) {
+        this.dest = dest;
         this.part = part;
-        this.length = length;
-        this.freq = freq;
+        this.start = start;
+        this.pace = pace;
+    }
+
+    @Override
+    public String toString() {
+        return "["+part.toString()+"]->"+dest+" @ "+Integer.toString(start)+" / "+Integer.toString(pace);
     }
 }
 
 class ResultDeclaration implements Serializable {
     int length;
     int start;
-    int freq;
-    String componentId;
-    // TODO: windId + componentId ?
+    int pace;
+    String windowId;
 
-    ResultDeclaration(int length, int start, int freq, String componentId) {
+    ResultDeclaration(int length, int start, int pace, String windowId) {
         this.length = length;
         this.start = start;
-        this.freq = freq;
-        this.componentId = componentId;
+        this.pace = pace;
+        this.windowId = windowId;
+    }
+
+    @Override
+    public String toString() {
+        return windowId+": ("+Integer.toString(start)+","
+                +Integer.toString(length)+")/"+Integer.toString(pace);
     }
 }
