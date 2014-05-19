@@ -20,14 +20,17 @@ public class LibreTupleBuffer implements Serializable {
     String id;
 
     protected Tuple[][] tuples;
+    protected int[] nextComponent;
+    protected int nextResult;
+    protected int maxAllowed; // a cold start mechanism
 
-    int nextResult;
     int layers;
-    int size;
-    int[] nextComponent;
+    int size; // number of cells in the window, eg. [(1,2,3),(4,5),(6,7)] ->3=
     Fields selectFields;
     int pace;
-    int length;
+    int length; // actual window coverage, eg. [1,2,3,4,5,6,7] ->7
+    boolean emitting = true;
+
 
     Map<Integer, List<AggregationStrategy>> aggStrategies;
 
@@ -66,7 +69,7 @@ public class LibreTupleBuffer implements Serializable {
         tuples = new Tuple[layers][size];
 
         nextResult = 0;
-
+        maxAllowed = 0;
         nextComponent = new int[layers];
         for (int i=0; i<nextComponent.length; ++i)
             nextComponent[i] = 0;
@@ -89,6 +92,14 @@ public class LibreTupleBuffer implements Serializable {
 
     public int getLength () { return length;}
 
+    public boolean isEmitting() {
+        return emitting;
+    }
+
+    public void setEmitting (boolean emitting) {
+        this.emitting = emitting;
+    }
+
     public void setSelectFields (Fields selectFields) {
         this.selectFields = selectFields;
     }
@@ -100,7 +111,17 @@ public class LibreTupleBuffer implements Serializable {
          */
         int windIndex = nextResult;
 
+        boolean maxAllowedMet = false;
+
         for (int destComponent : destComponentIds) {
+
+            // cold start mechanism
+            if (destComponent > maxAllowed) {
+                continue;
+            } else if (destComponent == maxAllowed) {
+                maxAllowedMet = true;
+            }
+
             while (nextComponent[windIndex] > destComponent) {
                 windIndex = (windIndex + 1) % layers;
             }
@@ -118,6 +139,9 @@ public class LibreTupleBuffer implements Serializable {
                 nextComponent[windIndex] = 0;
             }
         }
+
+        if (maxAllowedMet)
+            maxAllowed++;
     }
 
 
@@ -128,20 +152,24 @@ public class LibreTupleBuffer implements Serializable {
 
             for (AggregationStrategy strategy : stratList) {
 
-                List<List<Object>> objs = new ArrayList<List<Object>>();
-                for (int inputPosition : strategy.step.inputPositions) {
-                    Tuple t = tuples[windIndex][inputPosition];
-                    List<Object> tupleSelected = t.select(selectFields);
-                    objs.add(tupleSelected);
+                Tuple result = tuples[windIndex][trigger];
+
+                if (strategy.step.inputPositions.size() > 1) { // perform aggregation if there are multiple inputs
+                    List<List<Object>> objs = new ArrayList<List<Object>>();
+                    for (int inputPosition : strategy.step.inputPositions) {
+                        Tuple t = tuples[windIndex][inputPosition];
+                        List<Object> tupleSelected = t.select(selectFields);
+                        objs.add(tupleSelected);
+                    }
+
+                    // calculate the result and save it
+                    result = new FakeTuple(strategy.function.apply(objs));
                 }
 
-                // calculate the result and save it
-                Tuple result = new FakeTuple(strategy.function.apply(objs));
                 tuples[windIndex][strategy.step.outputPosition] = result;
 
                 // observer notification
                 for (LibreWindowCallback callback : strategy.callbacks) {
-                    //dest.tupleBuffer.put(result, dest.componentIds);
                     callback.process(result);
                 }
             }

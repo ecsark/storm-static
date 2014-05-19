@@ -122,14 +122,26 @@ public class PaceGroup implements Serializable{
 
         Collections.sort(sep);
 
+        String baseName = "_base"+basePace;
+
         for (int i=0; i<sep.size()-1; ++i) {
             register(sep.get(i+1)-sep.get(i), sep.get(i),
-                    basePace, "____");
+                    basePace, baseName);
         }
 
         // register a complete pace
-        register(basePace, 0, basePace, "____");
+        register(basePace, 0, basePace, baseName);
+        WindowItem baseWindow = new WindowItem(baseName, basePace, basePace);
+        baseWindow.setEmitting(false);
+        windows.add(baseWindow);
 
+        // construct base window using underlying unit window
+        ResultDeclaration dummy = new ResultDeclaration(1,0,1,"_unit");
+        for (int i=0; i<basePace; ++i) {
+            links.add(new UseLink(baseName, dummy, i, 5));
+        }
+
+        sort();
     }
 
     private void construct(WindowItem item) {
@@ -184,11 +196,12 @@ public class PaceGroup implements Serializable{
 
     public void organize () {
 
+        links.clear();
         setUpBase();
 
-        links.clear();
-        for (WindowItem item : windows) {
+        for (int i=1; i<windows.size(); ++i) {
 
+            WindowItem item = windows.get(i);
             int startingIndex = links.size();
             construct(item);
 
@@ -203,11 +216,20 @@ class WindowItem implements Serializable {
     String id;
     int windowLength;
     int pace;
+    boolean emitting = true;
 
     WindowItem(String id, int windowLength, int pace) {
         this.id = id;
         this.windowLength = windowLength;
         this.pace = pace;
+    }
+
+    void setEmitting (boolean emitting) {
+        this.emitting = emitting;
+    }
+
+    boolean isEmitting () {
+        return emitting;
     }
 
     @Override

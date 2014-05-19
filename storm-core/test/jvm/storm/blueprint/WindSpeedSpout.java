@@ -45,7 +45,10 @@ public class WindSpeedSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         Utils.sleep(300);
-        value += _rand.nextDouble() * 4;
+        if (_rand.nextBoolean())
+            value += _rand.nextDouble() * 4;
+        else
+            value -= _rand.nextDouble() * 4;
         _collector.emit(new Values(value));
     }
 }

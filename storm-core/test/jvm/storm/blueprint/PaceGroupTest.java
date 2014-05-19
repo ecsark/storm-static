@@ -7,16 +7,16 @@ import java.util.List;
 
 public class PaceGroupTest extends TestCase {
 
-    WindowManager wm;
+    LibreBoltBuilder wm;
     Collection<PaceGroup> paceGroups;
 
     public void setUp() throws Exception {
         super.setUp();
-        wm = new WindowManager();
+        wm = new LibreBoltBuilder("abolt");
         addWindow(28, 5);
         //addWindow(27, 5);
         //addWindow(43, 5);
-        //addWindow(8, 5);
+        addWindow(8, 5);
         addWindow(12, 5);
         //addWindow(26, 5);
 
@@ -25,7 +25,7 @@ public class PaceGroupTest extends TestCase {
 
     public void setUp1() throws Exception {
         super.setUp();
-        wm = new WindowManager();
+        wm = new LibreBoltBuilder("abolt");
         addWindow(30, 5);
         addWindow(10, 5);
         addWindow(600, 30);
@@ -35,7 +35,7 @@ public class PaceGroupTest extends TestCase {
     }
 
     private void addWindow (int length, int pace) {
-        wm.put(length+"/"+pace, length, pace);
+        wm.addWindow(length+"/"+pace, length, pace);
     }
 
     public void testOrganize() throws Exception {

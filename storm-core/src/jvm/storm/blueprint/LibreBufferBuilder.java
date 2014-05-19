@@ -2,6 +2,7 @@ package storm.blueprint;
 
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 import storm.blueprint.buffer.AggregationStep;
 import storm.blueprint.buffer.AggregationStrategy;
 import storm.blueprint.buffer.LibreTupleBuffer;
@@ -18,7 +19,8 @@ import java.util.*;
  */
 public class LibreBufferBuilder implements Serializable {
 
-    public Collection<LibreTupleBuffer> build (PaceGroup paceGroup, Functional function, Fields selectField) {
+    public Collection<LibreTupleBuffer> build (PaceGroup paceGroup, Functional function, Fields selectField,
+                                               final LibreBolt bolt) {
 
         Map<String, List<ResultDependency>> dependencies = resolveDependencies(paceGroup.links);
         Map<String, List<UseLink>> partitions = extractPartition(paceGroup.links);
@@ -26,10 +28,13 @@ public class LibreBufferBuilder implements Serializable {
 
         for (WindowItem window : paceGroup.windows) {
 
+            LibreTupleBuffer buffer;
+
             List<UseLink> partition = partitions.get(window.id);
-            LibreTupleBuffer buffer = new LibreTupleBuffer(window.id, partition.size(),
+            buffer = new LibreTupleBuffer(window.id, partition.size(),
                     calculateLayerNums(window, partition), window.pace, window.windowLength);
 
+            buffer.setEmitting(window.isEmitting());
             buffer.setSelectFields(selectField);
             buffers.put(window.id, buffer);
         }
@@ -40,10 +45,16 @@ public class LibreBufferBuilder implements Serializable {
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
             // add final aggregation result declare
-            ResultDependency lastResult = dependencyList.get(dependencyList.size()-1);
-            if (lastResult.declaration.start+lastResult.declaration.length!=buffer.getLength()) {
+            if (dependencyList!=null) {
+                ResultDependency lastResult = dependencyList.get(dependencyList.size() - 1);
+                if (lastResult.declaration.start + lastResult.declaration.length != buffer.getLength()) {
+                    dependencyList.add(new ResultDependency(
+                            new ResultDeclaration(buffer.getLength(), 0, buffer.getPace(), buffer.getId())));
+                }
+            } else { // in case there is no result reuse of this window at all
+                dependencyList = new ArrayList<ResultDependency>();
                 dependencyList.add(new ResultDependency(
-                        new ResultDeclaration(buffer.getSize(), 0, buffer.getPace(), buffer.getId())));
+                        new ResultDeclaration(buffer.getLength(), 0, buffer.getPace(), buffer.getId())));
             }
 
             List<AggregationDependency> aggregationSteps = generateAggregationStep(dependencyList, partitions.get(buffer.getId()));
@@ -89,12 +100,15 @@ public class LibreBufferBuilder implements Serializable {
                 }
 
                 // for the final aggregation
-                if (aggStep.dependencies.declaration.start == 0
+                if (buffer.isEmitting() && aggStep.dependencies.declaration.start == 0
                         && aggStep.dependencies.declaration.length==buffer.getLength()) {
+
+                    final String bufferId = buffer.getId();
+
                     callbacks.add(new LibreWindowCallback() {
                         @Override
                         public void process(Tuple tuples) {
-                            // TODO: emit tuple
+                            bolt.getCollector().emit(bufferId, new Values(tuples.getValues().get(0)));
                         }
                     });
                 }
@@ -167,7 +181,6 @@ public class LibreBufferBuilder implements Serializable {
                 partitions.put(link.dest, new ArrayList<UseLink>());
 
             partitions.get(link.dest).add(link);
-
         }
 
         for (List<UseLink> partition : partitions.values()) {
