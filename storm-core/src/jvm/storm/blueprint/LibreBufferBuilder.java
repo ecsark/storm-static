@@ -32,8 +32,9 @@ public class LibreBufferBuilder implements Serializable {
 
             List<UseLink> partition = partitions.get(window.id);
             buffer = new LibreTupleBuffer(window.id, partition.size(),
-                    calculateLayerNums(window, partition), window.pace, window.windowLength);
+                    calculateLayerNum(window, partition), window.pace, window.windowLength);
 
+            buffer.setAncestorStates(calculateAncestorStates(partition,window.pace, window.windowLength));
             buffer.setEmitting(window.isEmitting());
             buffer.setSelectFields(selectField);
             buffers.put(window.id, buffer);
@@ -76,6 +77,7 @@ public class LibreBufferBuilder implements Serializable {
                 // for each result receiver
                 for (Map.Entry<String, List<UseLink>> linkEntry : linkGroup.map.entrySet()) {
 
+                    //TODO: different frequency!!!
                     final LibreTupleBuffer buf = buffers.get(linkEntry.getKey());
                     final List<Integer> destComponentIndices = new ArrayList<Integer>();
 
@@ -268,12 +270,39 @@ public class LibreBufferBuilder implements Serializable {
     }
 
 
-    private int calculateLayerNums(WindowItem window, List<UseLink> partition) {
+    protected int calculateLayerNum(WindowItem window, List<UseLink> partition) {
 
         // partitions should be sorted in the ascending order of finish time
         // which should be done already
 
         return (window.windowLength - partition.get(0).part.length) / window.pace + 1;
+    }
+
+    protected List<Integer> calculateAncestorStates (List<UseLink> partition, int pace, int windowLength) {
+
+        int nAncestor = (windowLength-1) / pace;
+
+        List<Integer> states = new ArrayList<Integer>(nAncestor);
+        // pre-stuffing!
+        for (int i=0; i<nAncestor; ++i) {
+            states.add(0);
+        }
+
+
+        int length = 0;
+
+        for (int i=1, j=0; i<=nAncestor; ++i) {
+            // so that l_0+l_1+...+l_{j-1} >= i*pace
+            while (length < i*pace) {
+                length += partition.get(j).part.length;
+                ++j;
+            }
+
+            states.set(nAncestor-i, j);
+        }
+
+        return states;
+
     }
 
 

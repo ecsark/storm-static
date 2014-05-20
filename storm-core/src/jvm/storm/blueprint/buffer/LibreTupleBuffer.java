@@ -21,16 +21,17 @@ public class LibreTupleBuffer implements Serializable {
 
     protected Tuple[][] tuples;
     protected int[] nextComponent;
+    protected List<Integer> ancestorStates;
     protected int nextResult;
-    protected int maxAllowed; // a cold start mechanism
 
     int layers;
-    int size; // number of cells in the window, eg. [(1,2,3),(4,5),(6,7)] ->3=
+    int size; // number of cells in the window, eg. [(1,2,3),(4,5),(6,7)] ->3
     Fields selectFields;
     int pace;
     int length; // actual window coverage, eg. [1,2,3,4,5,6,7] ->7
     boolean emitting = true;
-
+    boolean coldStart = true;
+    int coldNextResult = 0;
 
     Map<Integer, List<AggregationStrategy>> aggStrategies;
 
@@ -69,7 +70,6 @@ public class LibreTupleBuffer implements Serializable {
         tuples = new Tuple[layers][size];
 
         nextResult = 0;
-        maxAllowed = 0;
         nextComponent = new int[layers];
         for (int i=0; i<nextComponent.length; ++i)
             nextComponent[i] = 0;
@@ -104,22 +104,40 @@ public class LibreTupleBuffer implements Serializable {
         this.selectFields = selectFields;
     }
 
+    public void setAncestorStates (List<Integer> ancestorStates) {
+        this.ancestorStates = ancestorStates;
+    }
+
+    public void allowColdStart (boolean allow) {
+        coldStart = allow;
+    }
 
     public void put (Tuple tuple, List<Integer> destComponentIds) {
         /*
             destComponentIds should be a sorted list in descending order
          */
-        int windIndex = nextResult;
 
-        boolean maxAllowedMet = false;
+        int windIndex = nextResult;
+        int coldIndex = coldNextResult;
 
         for (int destComponent : destComponentIds) {
 
-            // cold start mechanism
-            if (destComponent > maxAllowed) {
-                continue;
-            } else if (destComponent == maxAllowed) {
-                maxAllowedMet = true;
+            if (coldStart) {
+                while (coldIndex < ancestorStates.size()
+                        && ancestorStates.get(coldIndex) > destComponent) {
+                    ++coldIndex;
+                }
+                if (coldIndex < ancestorStates.size()) {
+                    assert (ancestorStates.get(coldIndex) == destComponent);
+                    if (destComponent == size) { // this window is finished!
+                        ++coldNextResult;
+                        if (coldNextResult >= ancestorStates.size())
+                            coldStart = false; // cold start done
+                    } else {
+                        ancestorStates.set(coldIndex, destComponent+1);
+                        continue; // skip the below
+                    }
+                }
             }
 
             while (nextComponent[windIndex] > destComponent) {
@@ -134,14 +152,15 @@ public class LibreTupleBuffer implements Serializable {
             //sub-aggregation and callback goes here
             partialAggregate(destComponent, windIndex);
 
+
             if (nextComponent[windIndex] == size) {
                 nextResult = (nextResult + 1) % layers;
                 nextComponent[windIndex] = 0;
+
             }
+            windIndex = (windIndex + 1) % layers;// new added
         }
 
-        if (maxAllowedMet)
-            maxAllowed++;
     }
 
 
@@ -156,6 +175,7 @@ public class LibreTupleBuffer implements Serializable {
 
                 if (strategy.step.inputPositions.size() > 1) { // perform aggregation if there are multiple inputs
                     List<List<Object>> objs = new ArrayList<List<Object>>();
+
                     for (int inputPosition : strategy.step.inputPositions) {
                         Tuple t = tuples[windIndex][inputPosition];
                         List<Object> tupleSelected = t.select(selectFields);

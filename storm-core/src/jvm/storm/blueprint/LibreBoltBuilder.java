@@ -104,6 +104,7 @@ public class LibreBoltBuilder implements Serializable {
         bolt.buffers = buffers;
 
         //TODO: correct this!
+        entrances.get(0).allowColdStart(false);
         bolt.setEntrance(new LibreEntranceBuffer(entrances.get(0)));
 
         return bolt;

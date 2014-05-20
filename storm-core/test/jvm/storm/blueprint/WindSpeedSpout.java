@@ -31,7 +31,7 @@ public class WindSpeedSpout extends BaseRichSpout {
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         _rand = new Random();
-        value = 32.3;
+        value = 300.0;
     }
 
     @Override
@@ -44,11 +44,11 @@ public class WindSpeedSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        Utils.sleep(300);
+        Utils.sleep(30);
         if (_rand.nextBoolean())
-            value += _rand.nextDouble() * 4;
+            value += _rand.nextDouble() * 8;
         else
-            value -= _rand.nextDouble() * 4;
+            value -= _rand.nextDouble() * 8;
         _collector.emit(new Values(value));
     }
 }
