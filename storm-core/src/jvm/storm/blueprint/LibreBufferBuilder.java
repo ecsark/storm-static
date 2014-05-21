@@ -32,9 +32,9 @@ public class LibreBufferBuilder implements Serializable {
 
             List<UseLink> partition = partitions.get(window.id);
             buffer = new LibreTupleBuffer(window.id, partition.size(),
-                    calculateLayerNum(window, partition), window.pace, window.windowLength);
+                    computeLayerNum(window, partition), window.pace, window.windowLength);
 
-            buffer.setAncestorStates(calculateAncestorStates(partition,window.pace, window.windowLength));
+            buffer.setAncestorStates(computeAncestorStates(partition, window.pace, window.windowLength));
             buffer.setEmitting(window.isEmitting());
             buffer.setSelectFields(selectField);
             buffers.put(window.id, buffer);
@@ -77,28 +77,28 @@ public class LibreBufferBuilder implements Serializable {
                 // for each result receiver
                 for (Map.Entry<String, List<UseLink>> linkEntry : linkGroup.map.entrySet()) {
 
-                    //TODO: different frequency!!!
                     final LibreTupleBuffer buf = buffers.get(linkEntry.getKey());
-                    final List<Integer> destComponentIndices = new ArrayList<Integer>();
 
-                    // extract component index from uselink to a list
-                    // and sort them in the descending order
-                    for (UseLink link : linkEntry.getValue()) {
-                        destComponentIndices.add(link.index);
+                    Map<Integer, List<Integer>> counterMap = computeForwardingPattern(linkEntry.getValue());
+
+                    UseLink sample = linkEntry.getValue().get(0); // there should be at least one element!
+                    final int cycle = sample.pace / sample.part.pace;
+
+                    for (Map.Entry<Integer, List<Integer>> counterEntry : counterMap.entrySet()) {
+
+                        final List<Integer> destComponentIndices = counterEntry.getValue();
+                        final int triggerCounter = counterEntry.getKey();
+
+                        callbacks.add(new LibreWindowCallback() {
+                            int counter = 0;
+                            @Override
+                            public void process(Tuple tuples) {
+                                if (counter == triggerCounter)
+                                    buf.put(tuples, destComponentIndices);
+                                counter = (counter+1) % cycle;
+                            }
+                        });
                     }
-                    Collections.sort(destComponentIndices, new Comparator<Integer>() {
-                        @Override
-                        public int compare(Integer o1, Integer o2) {
-                            return o2-o1;
-                        }
-                    });
-
-                    callbacks.add(new LibreWindowCallback() {
-                        @Override
-                        public void process(Tuple tuples) {
-                            buf.put(tuples, destComponentIndices);
-                        }
-                    });
                 }
 
                 // for the final aggregation
@@ -270,7 +270,7 @@ public class LibreBufferBuilder implements Serializable {
     }
 
 
-    protected int calculateLayerNum(WindowItem window, List<UseLink> partition) {
+    protected int computeLayerNum(WindowItem window, List<UseLink> partition) {
 
         // partitions should be sorted in the ascending order of finish time
         // which should be done already
@@ -278,7 +278,7 @@ public class LibreBufferBuilder implements Serializable {
         return (window.windowLength - partition.get(0).part.length) / window.pace + 1;
     }
 
-    protected List<Integer> calculateAncestorStates (List<UseLink> partition, int pace, int windowLength) {
+    protected List<Integer> computeAncestorStates(List<UseLink> partition, int pace, int windowLength) {
 
         int nAncestor = (windowLength-1) / pace;
 
@@ -288,7 +288,6 @@ public class LibreBufferBuilder implements Serializable {
             states.add(0);
         }
 
-
         int length = 0;
 
         for (int i=1, j=0; i<=nAncestor; ++i) {
@@ -297,12 +296,55 @@ public class LibreBufferBuilder implements Serializable {
                 length += partition.get(j).part.length;
                 ++j;
             }
-
             states.set(nAncestor-i, j);
         }
 
         return states;
+    }
 
+
+    // <triggerCounter, List<destComponentIds>>
+    protected Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
+
+        if (links.size() == 0) {
+            return new HashMap<Integer, List<Integer>>();
+        }
+
+        List<Integer> counters = new ArrayList<Integer>();
+        for (UseLink link : links) {
+            int counter = link.start/link.part.pace;
+            counters.add(counter);
+        }
+        // see if there is coincidence
+        final int rotation = links.get(0).pace/links.get(0).part.pace; // there should be at least one element!!
+        ListMap<Integer, UseLink> counterMap = new ListMap<Integer, UseLink>(links,
+            new ListMap.KeyExtractable<Integer, UseLink>() {
+                @Override
+                public Integer getKey(UseLink item) {
+                    return (item.start/item.part.pace) % rotation;
+                }
+            });
+
+        // sort each list in the descending order of index
+        for(List<UseLink> counterList : counterMap.map.values()) {
+            Collections.sort(counterList, new Comparator<UseLink>() {
+                @Override
+                public int compare(UseLink o1, UseLink o2) {
+                    return o2.index - o1.index;
+                }
+            });
+        }
+
+        // extract the indices from UseLink
+        Map<Integer, List<Integer>> map = new HashMap<Integer, List<Integer>>();
+        for (Map.Entry<Integer, List<UseLink>> entry : counterMap.map.entrySet()) {
+            List<Integer> list = new ArrayList<Integer>();
+            for (UseLink link : entry.getValue())
+                list.add(link.index);
+            map.put(entry.getKey(), list);
+        }
+
+        return map;
     }
 
 
