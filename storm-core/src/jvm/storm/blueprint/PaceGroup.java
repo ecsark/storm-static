@@ -133,15 +133,13 @@ public class PaceGroup implements Serializable{
         register(basePace, 0, basePace, baseName);
         WindowItem baseWindow = new WindowItem(baseName, basePace, basePace);
         baseWindow.setEmitting(false);
-        windows.add(baseWindow);
+        windows.add(baseWindow); // NOTE HERE: base window is placed at the very rear!
 
         // construct base window using underlying unit window
         ResultDeclaration dummy = new ResultDeclaration(1,0,1,"_unit");
         for (int i=0; i<basePace; ++i) {
             links.add(new UseLink(baseName, dummy, i, 5));
         }
-
-        sort();
     }
 
     private void construct(WindowItem item) {
@@ -199,7 +197,7 @@ public class PaceGroup implements Serializable{
         links.clear();
         setUpBase();
 
-        for (int i=1; i<windows.size(); ++i) {
+        for (int i=0; i<windows.size()-1; ++i) {
 
             WindowItem item = windows.get(i);
             int startingIndex = links.size();

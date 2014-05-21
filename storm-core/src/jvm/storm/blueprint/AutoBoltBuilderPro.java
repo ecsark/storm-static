@@ -7,9 +7,7 @@ import storm.blueprint.function.FunctionNotSupportedException;
 import storm.blueprint.function.Incremental;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: ecsark
@@ -23,6 +21,9 @@ public class AutoBoltBuilderPro implements Serializable {
     public static String HIERARCHICAL_WINDOW = "hier";
 
     private transient AutoBoltPro _bolt;
+
+    Set<String> windowNames = new HashSet <String>();
+    Random rand = new Random();
 
     private static FunctionFactory ff = new FunctionFactory();
 
@@ -58,6 +59,13 @@ public class AutoBoltBuilderPro implements Serializable {
     public AutoBoltBuilderPro addTupleBuffer (String outputStreamId, int windowLength, int pace, String functionName,
                                               String windowType, boolean emitting)
             throws FunctionNotSupportedException, BufferTypeNotSupportedException {
+
+        //make sure there are no id duplicates!
+        while (windowNames.contains(outputStreamId)) {
+            outputStreamId += "_" + rand.nextInt(100);
+        }
+        windowNames.add(outputStreamId);
+
 
         BufferStack stack = new BufferStack();
         stack.function = ff.getFunction(functionName);

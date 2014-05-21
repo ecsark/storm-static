@@ -29,6 +29,8 @@ public class FunctionFactory implements Serializable{
         registry.put("rms", RootMeanSquare.class);
         registry.put("dev", StandardDeviation.class);
         registry.put("max", Max.class);
+        registry.put("sum", Sum.class);
+        registry.put("multiply", Multiply.class);
     }
 
     public Functional getFunction(String name) throws FunctionNotSupportedException {

@@ -17,10 +17,11 @@ public class WindspeedTopology {
     public static void main (String[] args) throws Exception{
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        builder.setBolt("avg", WindSpeedBoltsReuse.setUpAVGBolts(), 1).shuffleGrouping("spout");
+        //builder.setBolt("avg", WindSpeedBoltsPro.setUpAVGBolts(), 1).shuffleGrouping("spout");
+        builder.setBolt("sum", WindSpeedBoltsPro.setupAutoGeneratingBolt(), 1).shuffleGrouping("spout");
 
         Config conf = new Config();
-        conf.setDebug(true);
+        conf.setDebug(false);
 
         if (args != null && args.length > 0) {
             System.out.println("Using Cluster");
@@ -33,7 +34,7 @@ public class WindspeedTopology {
             ILocalCluster cluster = new LocalCluster();
             cluster.submitTopology("windspeed", conf, builder.createTopology());
 
-            Thread.sleep(120000);
+            Thread.sleep(180000);
 
             cluster.shutdown();
         }

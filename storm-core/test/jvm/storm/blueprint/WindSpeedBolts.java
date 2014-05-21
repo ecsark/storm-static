@@ -47,4 +47,29 @@ public class WindSpeedBolts {
 
     }
 
+    void setUpMAXBoltsNaive() {
+        bolts = new ArrayList<AutoBolt>();
+
+        int[] windowLength = new int[] {5, 10, 20, 60, 120, 360};
+        int[] pace = new int[] {5, 5, 10, 10, 20, 20};
+
+        for (int i=0; i<windowLength.length; ++i) {
+            AutoBoltBuilder builder = new AutoBoltBuilder("max_"+Integer.toString(i));
+            try {
+                AutoBolt bolt = builder
+                        .setFunction("max")
+                        .setInputSelectFields("windspeed")
+                        .setOutputFields("windspeed_max_" + Integer.toString(windowLength[i]))
+                        .setTupleBuffer("full", windowLength[i], pace[i])
+                        .build();
+                bolts.add(bolt);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+
+    }
+
 }

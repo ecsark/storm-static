@@ -44,6 +44,7 @@ public class LibreBolt extends BaseBasicBolt {
 
     LibreEntranceBuffer entrance;
 
+    Timing timer = new Timing(7000,700);
 
     @Override
     public void prepare(Map stormConf, TopologyContext context) {
@@ -54,8 +55,10 @@ public class LibreBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
+        timer.beforeTest();
         this.collector = collector;
         entrance.put(input);
+        timer.afterTest();
     }
 
     @Override

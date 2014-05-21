@@ -42,7 +42,6 @@ public class LibreBufferBuilder implements Serializable {
 
         // for each buffer
         for (LibreTupleBuffer buffer : buffers.values()) {
-
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
             // add final aggregation result declare

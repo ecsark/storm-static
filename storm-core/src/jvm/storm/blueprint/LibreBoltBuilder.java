@@ -26,6 +26,9 @@ public class LibreBoltBuilder implements Serializable {
 
     Fields inputFields;
 
+    Set<String> windowNames;
+    Random rand = new Random();
+
     public LibreBoltBuilder setInputFields(Fields inputFields) {
         this.inputFields = inputFields;
         return this;
@@ -43,11 +46,19 @@ public class LibreBoltBuilder implements Serializable {
 
     public LibreBoltBuilder(String name) {
         windows = new TreeMap<Integer, PaceGroup>(Collections.reverseOrder());
+        windowNames = new HashSet<String>();
         bolt = new LibreBolt();
         bolt.setBoltName(name);
     }
 
     public LibreBoltBuilder addWindow(String id, int windowLength, int pace) {
+
+        //make sure there are no id duplicates!
+        while (windowNames.contains(id)) {
+            id += "_" + rand.nextInt(100);
+        }
+        windowNames.add(id);
+
         if (!windows.containsKey(pace))
             windows.put(pace, new PaceGroup());
         PaceGroup paceGroup = windows.get(pace);
@@ -92,7 +103,9 @@ public class LibreBoltBuilder implements Serializable {
             buffers.addAll(newBuffers);
 
             // find the entrance
-            String entranceName = paceGroup.windows.get(0).id;
+            // remember base window is placed at the last!
+            String entranceName = paceGroup.windows.get(paceGroup.windows.size()-1).id;
+
             for (LibreTupleBuffer buf : newBuffers) {
                 if (buf.getId().equals(entranceName)) {
                     entrances.add(buf);
