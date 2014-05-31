@@ -170,7 +170,7 @@ public class PaceGroup implements Serializable{
         int a = item.windowLength % item.pace;
 
         for (int i=startingIndex; i<endingIndex; ++i) {
-            position += links.get(i).part.length;
+            position += links.get(i).component.length;
             if (position > item.pace) {
                 //break;
             }
@@ -210,50 +210,26 @@ public class PaceGroup implements Serializable{
 
 }
 
-class WindowItem implements Serializable {
-    String id;
-    int windowLength;
-    int pace;
-    boolean emitting = true;
 
-    WindowItem(String id, int windowLength, int pace) {
-        this.id = id;
-        this.windowLength = windowLength;
-        this.pace = pace;
-    }
-
-    void setEmitting (boolean emitting) {
-        this.emitting = emitting;
-    }
-
-    boolean isEmitting () {
-        return emitting;
-    }
-
-    @Override
-    public String toString() {
-        return id +": "+Integer.toString(windowLength)+"/"+Integer.toString(pace);
-    }
-}
 
 
 class UseLink implements Serializable {
     String dest;
-    ResultDeclaration part;
+    ResultDeclaration component;
     int start; //position in the receiver
     int index; //the index of the component, which will be set later
     int pace; //receiving frequency
 
-    UseLink (String dest, ResultDeclaration part, int start, int pace) {
+    UseLink (String dest, ResultDeclaration component, int start, int pace) {
         this.dest = dest;
-        this.part = part;
+        this.component = component;
         this.start = start;
         this.pace = pace;
     }
 
     @Override
     public String toString() {
-        return "["+part.toString()+"]->"+dest+" @ "+Integer.toString(start)+" / "+Integer.toString(pace);
+        return "["+ component.toString()+"]->"+dest+" @ "+Integer.toString(start)+" / "+Integer.toString(pace);
     }
 }
 

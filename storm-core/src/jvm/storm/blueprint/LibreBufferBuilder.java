@@ -8,6 +8,7 @@ import storm.blueprint.buffer.AggregationStrategy;
 import storm.blueprint.buffer.LibreTupleBuffer;
 import storm.blueprint.buffer.LibreWindowCallback;
 import storm.blueprint.function.Functional;
+import storm.blueprint.util.ListMap;
 
 import java.io.Serializable;
 import java.util.*;
@@ -81,7 +82,7 @@ public class LibreBufferBuilder implements Serializable {
                     Map<Integer, List<Integer>> counterMap = computeForwardingPattern(linkEntry.getValue());
 
                     UseLink sample = linkEntry.getValue().get(0); // there should be at least one element!
-                    final int cycle = sample.pace / sample.part.pace;
+                    final int cycle = sample.pace / sample.component.pace;
 
                     for (Map.Entry<Integer, List<Integer>> counterEntry : counterMap.entrySet()) {
 
@@ -134,7 +135,7 @@ public class LibreBufferBuilder implements Serializable {
         Map<String, List<ResultDependency>> dependencies = new HashMap<String, List<ResultDependency>>();
 
         for (UseLink link : links) {
-            ResultDeclaration part = link.part;
+            ResultDeclaration part = link.component;
 
             if (!dependencies.containsKey(part.windowId))
                 dependencies.put(part.windowId, new ArrayList<ResultDependency>());
@@ -235,7 +236,7 @@ public class LibreBufferBuilder implements Serializable {
             for (int i=0; i<partitions.size(); ++i) {
                 UseLink partition = partitions.get(i);
 
-                while (partition.start+partition.part.length == dec.declaration.start+dec.declaration.length) {
+                while (partition.start+partition.component.length == dec.declaration.start+dec.declaration.length) {
                     for (int j=i; j>=0; --j) {
                         UseLink firstPartition = partitions.get(j);
                         if (firstPartition.start == dec.declaration.start) {
@@ -274,7 +275,7 @@ public class LibreBufferBuilder implements Serializable {
         // partitions should be sorted in the ascending order of finish time
         // which should be done already
 
-        return (window.windowLength - partition.get(0).part.length) / window.pace + 1;
+        return (window.windowLength - partition.get(0).component.length) / window.pace + 1;
     }
 
     protected List<Integer> computeAncestorStates(List<UseLink> partition, int pace, int windowLength) {
@@ -292,7 +293,7 @@ public class LibreBufferBuilder implements Serializable {
         for (int i=1, j=0; i<=nAncestor; ++i) {
             // so that l_0+l_1+...+l_{j-1} >= i*pace
             while (length < i*pace) {
-                length += partition.get(j).part.length;
+                length += partition.get(j).component.length;
                 ++j;
             }
             states.set(nAncestor-i, j);
@@ -311,16 +312,16 @@ public class LibreBufferBuilder implements Serializable {
 
         List<Integer> counters = new ArrayList<Integer>();
         for (UseLink link : links) {
-            int counter = link.start/link.part.pace;
+            int counter = link.start/link.component.pace;
             counters.add(counter);
         }
         // see if there is coincidence
-        final int rotation = links.get(0).pace/links.get(0).part.pace; // there should be at least one element!!
+        final int rotation = links.get(0).pace/links.get(0).component.pace; // there should be at least one element!!
         ListMap<Integer, UseLink> counterMap = new ListMap<Integer, UseLink>(links,
             new ListMap.KeyExtractable<Integer, UseLink>() {
                 @Override
                 public Integer getKey(UseLink item) {
-                    return (item.start/item.part.pace) % rotation;
+                    return (item.start/item.component.pace) % rotation;
                 }
             });
 
@@ -363,8 +364,8 @@ public class LibreBufferBuilder implements Serializable {
 
 
         boolean addTarget (UseLink dependent) {
-            assert(dependent.part==declaration); // TODO: remove this line
-            if (dependent.part!=declaration)
+            assert(dependent.component ==declaration); // TODO: remove this line
+            if (dependent.component !=declaration)
                 return false;
             dependents.add(dependent);
             return true;

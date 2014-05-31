@@ -10,7 +10,23 @@ public class PaceGroupTest extends TestCase {
     LibreBoltBuilder wm;
     Collection<PaceGroup> paceGroups;
 
+
     public void setUp() throws Exception {
+        super.setUp();
+        wm = new LibreBoltBuilder("abolt");
+        addWindow(8, 5);
+        addWindow(12, 5);
+        addWindow(13, 10);
+        addWindow(17, 10);
+        addWindow(28, 20);
+        addWindow(33, 10);
+        addWindow(32, 20);
+        addWindow(38, 20);
+        addWindow(48, 40);
+        paceGroups = wm.windows.values();
+    }
+
+    public void setUp2() throws Exception {
         super.setUp();
         wm = new LibreBoltBuilder("abolt");
         addWindow(28, 5);

@@ -1,4 +1,4 @@
-package storm.blueprint;
+package storm.blueprint.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +38,10 @@ public class ListMap <K, V> {
 
     public interface KeyExtractable <A, B> {
         A getKey (B item);
+    }
+
+    public Map<K, List<V>> getMap () {
+        return map;
     }
 
 }
