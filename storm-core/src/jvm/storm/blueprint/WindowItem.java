@@ -9,13 +9,13 @@ import java.io.Serializable;
  */
 public class WindowItem implements Serializable {
     String id;
-    int windowLength;
+    int length;
     int pace;
     boolean emitting = true;
 
-    WindowItem(String id, int windowLength, int pace) {
+    WindowItem(String id, int length, int pace) {
         this.id = id;
-        this.windowLength = windowLength;
+        this.length = length;
         this.pace = pace;
     }
 
@@ -29,6 +29,6 @@ public class WindowItem implements Serializable {
 
     @Override
     public String toString() {
-        return id +": "+Integer.toString(windowLength)+"/"+Integer.toString(pace);
+        return id +": "+Integer.toString(length)+"/"+Integer.toString(pace);
     }
 }

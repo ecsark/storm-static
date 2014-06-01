@@ -1,8 +1,8 @@
 package storm.blueprint.util;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -10,7 +10,7 @@ import java.util.List;
  * Date: 5/31/14
  * Time: 10:26 PM
  */
-public class Divisor {
+public class Divisor implements Serializable {
 
     public static int getFirstDivisor (int data) {
         int len = (int)Math.sqrt(Math.abs(data));

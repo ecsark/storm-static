@@ -1,8 +1,8 @@
 package storm.blueprint;
 
 import backtype.storm.tuple.Tuple;
-import storm.blueprint.buffer.LibreTupleBuffer;
-import storm.blueprint.buffer.TupleBuffer;
+import storm.blueprint.buffer.IEntrance;
+import storm.blueprint.buffer.LibreBuffer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +12,14 @@ import java.util.List;
  * Date: 5/19/14
  * Time: 11:15 AM
  */
-public class LibreEntranceBuffer extends TupleBuffer {
+public class LibreEntranceBuffer implements IEntrance {
 
-    LibreTupleBuffer buf;
+    LibreBuffer buf;
     List<Integer> position;
     int size;
 
 
-    LibreEntranceBuffer(LibreTupleBuffer tupleBuffer) {
+    LibreEntranceBuffer(LibreBuffer tupleBuffer) {
         this.buf = tupleBuffer;
         size = buf.getSize();
         position = new ArrayList<Integer>();

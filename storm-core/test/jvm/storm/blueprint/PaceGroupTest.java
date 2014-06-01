@@ -13,7 +13,7 @@ public class PaceGroupTest extends TestCase {
 
     public void setUp() throws Exception {
         super.setUp();
-        wm = new LibreBoltBuilder("abolt");
+        wm = new LibreBoltBuilder();
         addWindow(8, 5);
         addWindow(12, 5);
         addWindow(13, 10);
@@ -28,7 +28,7 @@ public class PaceGroupTest extends TestCase {
 
     public void setUp2() throws Exception {
         super.setUp();
-        wm = new LibreBoltBuilder("abolt");
+        wm = new LibreBoltBuilder();
         addWindow(28, 5);
         //addWindow(27, 5);
         //addWindow(43, 5);
@@ -41,7 +41,7 @@ public class PaceGroupTest extends TestCase {
 
     public void setUp1() throws Exception {
         super.setUp();
-        wm = new LibreBoltBuilder("abolt");
+        wm = new LibreBoltBuilder();
         addWindow(30, 5);
         addWindow(10, 5);
         addWindow(600, 30);

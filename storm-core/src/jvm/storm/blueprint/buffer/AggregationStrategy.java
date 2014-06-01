@@ -14,16 +14,16 @@ public class AggregationStrategy implements Serializable {
 
     AggregationStep step;
     Functional function;
-    List<LibreWindowCallback> callbacks;
+    List<WindowResultCallback> callbacks;
 
     public AggregationStrategy(Functional function, List<Integer> inputPositions, int outputPosition,
-                        int triggerPosition, List<LibreWindowCallback> callbacks) {
+                        int triggerPosition, List<WindowResultCallback> callbacks) {
         this.function = function;
         this.step = new AggregationStep(inputPositions, outputPosition, triggerPosition);
         this.callbacks = callbacks;
     }
 
-    public AggregationStrategy(Functional function, AggregationStep step, List<LibreWindowCallback> callbacks) {
+    public AggregationStrategy(Functional function, AggregationStep step, List<WindowResultCallback> callbacks) {
         this.function = function;
         this.step = step;
         this.callbacks = callbacks;

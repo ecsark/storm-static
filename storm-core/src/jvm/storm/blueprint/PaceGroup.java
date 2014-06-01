@@ -28,12 +28,12 @@ public class PaceGroup implements Serializable{
         windows.add(new WindowItem(id, windowLength, pace));
     }
 
-    public void sort () { // sort in the ascending order of <pace, windowLength>
+    public void sort () { // sort in the ascending order of <pace, length>
         Collections.sort(windows, new Comparator<WindowItem>() {
             @Override
             public int compare(WindowItem o1, WindowItem o2) {
                 if (o1.pace == o2.pace)
-                    return o1.windowLength - o2.windowLength;
+                    return o1.length - o2.length;
                 return o1.pace - o2.pace;
             }
         });
@@ -108,7 +108,7 @@ public class PaceGroup implements Serializable{
 
         Set<Integer> separator = new HashSet<Integer>();
         for (WindowItem item : windows) {
-            separator.add(item.windowLength % basePace);
+            separator.add(item.length % basePace);
         }
 
         separator.add(0);
@@ -144,7 +144,7 @@ public class PaceGroup implements Serializable{
 
     private void construct(WindowItem item) {
 
-        int start = 0, length = item.windowLength, pace = item.pace;
+        int start = 0, length = item.length, pace = item.pace;
 
         while (start < length) {
             ResultDeclaration match = findBestMatchingResult(length-start, start, pace);
@@ -167,7 +167,7 @@ public class PaceGroup implements Serializable{
         boolean open = false;
         int lastPosition = 0;
 
-        int a = item.windowLength % item.pace;
+        int a = item.length % item.pace;
 
         for (int i=startingIndex; i<endingIndex; ++i) {
             position += links.get(i).component.length;
@@ -188,7 +188,7 @@ public class PaceGroup implements Serializable{
         }
 
         // register window
-        register(item.windowLength, 0, item.pace, item.id);
+        register(item.length, 0, item.pace, item.id);
     }
 
 

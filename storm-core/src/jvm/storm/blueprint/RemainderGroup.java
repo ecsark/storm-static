@@ -1,7 +1,9 @@
 package storm.blueprint;
 
 import storm.blueprint.util.Divisor;
+import storm.blueprint.util.ListMap;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -9,13 +11,15 @@ import java.util.*;
  * Date: 5/31/14
  * Time: 9:39 PM
  */
-public class RemainderGroup {
+public class RemainderGroup implements Serializable {
 
     List<WindowItem> windows;
 
     Set<Delegate> delegates;
 
     List<Delegate> entrances;
+
+    BaseDelegate baseDelegate;
 
     int basePace;
 
@@ -24,6 +28,7 @@ public class RemainderGroup {
         this.basePace = basePace;
         windows = new ArrayList<WindowItem>();
         entrances = new ArrayList<Delegate>();
+        baseDelegate = new BaseDelegate(basePace);
         delegates = new TreeSet<Delegate>(new Comparator<Delegate>() {
             @Override
             public int compare(Delegate o1, Delegate o2) {
@@ -48,8 +53,9 @@ public class RemainderGroup {
 
         Delegate currentDelegate = delegate;
 
+        // if there is no parent delegate, set up a new entrance
         if (currentDelegate == null) {
-            currentDelegate = new Delegate(basePace, window.windowLength%basePace);
+            currentDelegate = new Delegate(basePace, window.length %basePace);
             entrances.add(currentDelegate);
             delegates.add(currentDelegate);
         }
@@ -64,7 +70,7 @@ public class RemainderGroup {
 
             for (int divisor : divisors) {
                 currentPace *= divisor;
-                Delegate dg = new Delegate(currentPace, window.windowLength%currentPace);
+                Delegate dg = new Delegate(currentPace, window.length %currentPace);
                 currentDelegate.addClient(dg);
                 boolean success = delegates.add(dg);
                 assert(success);//TODO: remove this
@@ -116,6 +122,7 @@ public class RemainderGroup {
 
         delegates.clear();
 
+        // add window to topology one by one
         for (WindowItem window : windows) {
 
             Iterator<Delegate> iter = delegates.iterator();
@@ -124,7 +131,7 @@ public class RemainderGroup {
             while (iter.hasNext()) {
                 Delegate delegate = iter.next();
                 if (window.pace%delegate.pace==0
-                        &&window.windowLength%delegate.pace==delegate.remainder) {
+                        &&window.length %delegate.pace==delegate.remainder) {
 
                     construct(window, delegate);
                     constructed = true;
@@ -136,12 +143,21 @@ public class RemainderGroup {
                 construct(window, null);
         }
 
+        // add root
+        // NOTE: baseDelegate is not in delegates!!!
+        baseDelegate.clients.clear();
+        for (Delegate entrance : entrances) {
+            baseDelegate.addClient(entrance);
+        }
+        baseDelegate.split();
+
         shrink2();
+
     }
 }
 
 
-class Delegate {
+class Delegate implements Serializable {
     int pace;
     int remainder;
 
@@ -170,10 +186,48 @@ class Delegate {
     }
 }
 
+
 class BaseDelegate extends Delegate {
+
+    Map<Integer, List<Delegate>> delegateMap;
+    List<Integer> triggers;
 
     BaseDelegate (int pace) {
         super();
         this.pace = pace;
+        this.remainder = 0;
     }
+
+    boolean sanityCheck() {
+        for (Delegate delegate : clients) {
+            if (delegate.pace != pace)
+                return false;
+        }
+        return true;
+    }
+
+    void split () {
+
+        assert(sanityCheck()); //TODO: remove assert
+
+        ListMap<Integer, Delegate> dm = new ListMap<Integer, Delegate>(clients,
+                new ListMap.KeyExtractable<Integer, Delegate>() {
+            @Override
+            public Integer getKey(Delegate item) {
+                return item.remainder;
+            }
+        });
+
+        delegateMap = dm.getMap();
+
+        // remainder%pace=0 should be considered as remainder%pace=pace
+        if (delegateMap.containsKey(0)) {
+            delegateMap.put(pace, delegateMap.get(0));
+            delegateMap.remove(0);
+        }
+
+        triggers = new ArrayList<Integer>(delegateMap.keySet());
+        Collections.sort(triggers);
+    }
+
 }

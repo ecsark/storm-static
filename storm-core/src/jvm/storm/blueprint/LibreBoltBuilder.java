@@ -1,10 +1,8 @@
 package storm.blueprint;
 
-import backtype.storm.tuple.Fields;
-import storm.blueprint.buffer.LibreTupleBuffer;
-import storm.blueprint.function.Functional;
+import storm.blueprint.buffer.LibreBuffer;
+import storm.blueprint.buffer.TupleBuffer;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -12,45 +10,19 @@ import java.util.*;
  * Date: 5/10/14
  * Time: 10:31 AM
  */
-public class LibreBoltBuilder implements Serializable {
+public class LibreBoltBuilder extends AutoBoltBuilder {
 
     SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
 
-    List<LibreTupleBuffer> entrances;
+    List<LibreBuffer> entrances;
 
-    Collection<LibreTupleBuffer> buffers;
 
-    Functional function;
-
-    LibreBolt bolt;
-
-    Fields inputFields;
-
-    Set<String> windowNames;
-    Random rand = new Random();
-
-    public LibreBoltBuilder setInputFields(Fields inputFields) {
-        this.inputFields = inputFields;
-        return this;
-    }
-
-    public LibreBoltBuilder setOutputFields(Fields outputFields) {
-        bolt.setOutputFields(outputFields);
-        return this;
-    }
-
-    public LibreBoltBuilder setFunction(Functional function) {
-        this.function = function;
-        return this;
-    }
-
-    public LibreBoltBuilder(String name) {
+    public LibreBoltBuilder() {
+        super();
         windows = new TreeMap<Integer, PaceGroup>(Collections.reverseOrder());
-        windowNames = new HashSet<String>();
-        bolt = new LibreBolt();
-        bolt.setBoltName(name);
     }
 
+    @Override
     public LibreBoltBuilder addWindow(String id, int windowLength, int pace) {
 
         //make sure there are no id duplicates!
@@ -89,24 +61,24 @@ public class LibreBoltBuilder implements Serializable {
         }
     }
 
-    public LibreBolt build() {
+    public AutoBolt build() {
 
         consolidate();
 
         LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
-        buffers = new ArrayList<LibreTupleBuffer>();
-        entrances = new ArrayList<LibreTupleBuffer>();
+        buffers = new ArrayList<TupleBuffer>();
+        entrances = new ArrayList<LibreBuffer>();
 
         for (PaceGroup paceGroup : windows.values()) {
 
-            Collection<LibreTupleBuffer> newBuffers = bufferBuilder.build(paceGroup, function, inputFields, bolt);
+            Collection<LibreBuffer> newBuffers = bufferBuilder.build(paceGroup, function, inputFields, bolt);
             buffers.addAll(newBuffers);
 
             // find the entrance
             // remember base window is placed at the last!
             String entranceName = paceGroup.windows.get(paceGroup.windows.size()-1).id;
 
-            for (LibreTupleBuffer buf : newBuffers) {
+            for (LibreBuffer buf : newBuffers) {
                 if (buf.getId().equals(entranceName)) {
                     entrances.add(buf);
                     break;

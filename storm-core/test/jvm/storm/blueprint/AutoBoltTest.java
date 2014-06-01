@@ -11,10 +11,9 @@ import storm.blueprint.function.Sum;
 import java.util.List;
 import java.util.Random;
 
-public class LibreBoltTest {
+public class AutoBoltTest {
 
-    static LibreBolt setupLibreBolt () {
-        LibreBoltBuilder builder = new LibreBoltBuilder("max");
+    static AutoBolt setupAutoBolt(AutoBoltBuilder builder) {
         return builder.setFunction(new Max())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -29,8 +28,7 @@ public class LibreBoltTest {
     }
 
 
-    static LibreBolt setupIssueBolt () {
-        LibreBoltBuilder builder = new LibreBoltBuilder("max");
+    static AutoBolt setupIssueBolt (AutoBoltBuilder builder) {
         return builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -40,8 +38,7 @@ public class LibreBoltTest {
                 .build();
     }
 
-    static LibreBolt setupComparisonBolt () {
-        LibreBoltBuilder builder = new LibreBoltBuilder("max");
+    static AutoBolt setupComparisonBolt (AutoBoltBuilder builder) {
         return builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -61,8 +58,7 @@ public class LibreBoltTest {
     }
 
 
-    static LibreBolt setupAutoGeneratingBolt () {
-        LibreBoltBuilder builder = new LibreBoltBuilder("sum");
+    static AutoBolt setupAutoGeneratingBolt (AutoBoltBuilder builder) {
         builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
@@ -79,12 +75,11 @@ public class LibreBoltTest {
     public static void main (String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        //builder.setBolt("max", setupLibreBolt(), 1).shuffleGrouping("spout");
-        builder.setBolt("sum", setupAutoGeneratingBolt(), 1).shuffleGrouping("spout");
-        //builder.setBolt("sum", setupIssueBolt(), 1).shuffleGrouping("spout");
+        builder.setBolt("sum", setupAutoBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+
 
         Config conf = new Config();
-        conf.setDebug(false);
+        conf.setDebug(true);
 
         ILocalCluster cluster = new LocalCluster();
         cluster.submitTopology("windspeed", conf, builder.createTopology());

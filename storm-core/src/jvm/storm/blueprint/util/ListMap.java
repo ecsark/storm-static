@@ -1,5 +1,6 @@
 package storm.blueprint.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Map;
  * Date: 5/15/14
  * Time: 4:27 PM
  */
-public class ListMap <K, V> {
+public class ListMap <K, V> implements Serializable {
 
     public Map<K, List<V>> map;
 

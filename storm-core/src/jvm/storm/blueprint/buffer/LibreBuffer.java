@@ -1,6 +1,5 @@
 package storm.blueprint.buffer;
 
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import storm.blueprint.function.Functional;
 
@@ -15,9 +14,7 @@ import java.util.Map;
  * Date: 5/14/14
  * Time: 11:12 AM
  */
-public class LibreTupleBuffer implements Serializable {
-
-    String id;
+public class LibreBuffer extends TupleBuffer implements Serializable {
 
     protected Tuple[][] tuples;
     protected int[] nextComponent;
@@ -25,11 +22,6 @@ public class LibreTupleBuffer implements Serializable {
     protected int nextResult;
 
     int layers;
-    int size; // number of cells in the window, eg. [(1,2,3),(4,5),(6,7)] ->3
-    Fields selectFields;
-    int pace;
-    int length; // actual window coverage, eg. [1,2,3,4,5,6,7] ->7
-    boolean emitting = true;
     boolean coldStart = true;
     int coldNextResult = 0;
 
@@ -54,14 +46,14 @@ public class LibreTupleBuffer implements Serializable {
 
 
     public void addAggregationStrategy (Functional function, int triggerPosition, List<Integer> inputPositions,
-                                        int outputPosition, List<LibreWindowCallback> callbacks) {
+                                        int outputPosition, List<WindowResultCallback> callbacks) {
 
         addAggregationStrategy(new AggregationStrategy(function, inputPositions, outputPosition,
                 triggerPosition, callbacks));
     }
 
 
-    public LibreTupleBuffer(String id, int size, int layers, int pace, int length) {
+    public LibreBuffer(String id, int size, int layers, int pace, int length) {
         this.id = id;
         this.size = size;
         this.layers = layers;
@@ -78,31 +70,7 @@ public class LibreTupleBuffer implements Serializable {
 
     }
 
-    public String getId () {
-        return id;
-    }
 
-    public int getSize () {
-        return size;
-    }
-
-    public int getPace () {
-        return pace;
-    }
-
-    public int getLength () { return length;}
-
-    public boolean isEmitting() {
-        return emitting;
-    }
-
-    public void setEmitting (boolean emitting) {
-        this.emitting = emitting;
-    }
-
-    public void setSelectFields (Fields selectFields) {
-        this.selectFields = selectFields;
-    }
 
     public void setAncestorStates (List<Integer> ancestorStates) {
         this.ancestorStates = ancestorStates;
@@ -189,7 +157,7 @@ public class LibreTupleBuffer implements Serializable {
                 tuples[windIndex][strategy.step.outputPosition] = result;
 
                 // observer notification
-                for (LibreWindowCallback callback : strategy.callbacks) {
+                for (WindowResultCallback callback : strategy.callbacks) {
                     callback.process(result);
                 }
             }

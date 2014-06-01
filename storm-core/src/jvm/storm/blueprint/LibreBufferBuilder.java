@@ -5,8 +5,8 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import storm.blueprint.buffer.AggregationStep;
 import storm.blueprint.buffer.AggregationStrategy;
-import storm.blueprint.buffer.LibreTupleBuffer;
-import storm.blueprint.buffer.LibreWindowCallback;
+import storm.blueprint.buffer.LibreBuffer;
+import storm.blueprint.buffer.WindowResultCallback;
 import storm.blueprint.function.Functional;
 import storm.blueprint.util.ListMap;
 
@@ -20,29 +20,29 @@ import java.util.*;
  */
 public class LibreBufferBuilder implements Serializable {
 
-    public Collection<LibreTupleBuffer> build (PaceGroup paceGroup, Functional function, Fields selectField,
-                                               final LibreBolt bolt) {
+    public Collection<LibreBuffer> build (PaceGroup paceGroup, Functional function, Fields selectField,
+                                               final AutoBolt bolt) {
 
         Map<String, List<ResultDependency>> dependencies = resolveDependencies(paceGroup.links);
         Map<String, List<UseLink>> partitions = extractPartition(paceGroup.links);
-        Map<String, LibreTupleBuffer> buffers = new HashMap<String, LibreTupleBuffer>();
+        Map<String, LibreBuffer> buffers = new HashMap<String, LibreBuffer>();
 
         for (WindowItem window : paceGroup.windows) {
 
-            LibreTupleBuffer buffer;
+            LibreBuffer buffer;
 
             List<UseLink> partition = partitions.get(window.id);
-            buffer = new LibreTupleBuffer(window.id, partition.size(),
-                    computeLayerNum(window, partition), window.pace, window.windowLength);
+            buffer = new LibreBuffer(window.id, partition.size(),
+                    computeLayerNum(window, partition), window.pace, window.length);
 
-            buffer.setAncestorStates(computeAncestorStates(partition, window.pace, window.windowLength));
+            buffer.setAncestorStates(computeAncestorStates(partition, window.pace, window.length));
             buffer.setEmitting(window.isEmitting());
             buffer.setSelectFields(selectField);
             buffers.put(window.id, buffer);
         }
 
         // for each buffer
-        for (LibreTupleBuffer buffer : buffers.values()) {
+        for (LibreBuffer buffer : buffers.values()) {
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
             // add final aggregation result declare
@@ -62,7 +62,7 @@ public class LibreBufferBuilder implements Serializable {
 
             // for each aggregation step
             for (AggregationDependency aggStep : aggregationSteps) {
-                List<LibreWindowCallback> callbacks = new ArrayList<LibreWindowCallback>();
+                List<WindowResultCallback> callbacks = new ArrayList<WindowResultCallback>();
 
                 // group by dest id
                 ListMap<String, UseLink> linkGroup = new ListMap<String, UseLink>(
@@ -77,7 +77,7 @@ public class LibreBufferBuilder implements Serializable {
                 // for each result receiver
                 for (Map.Entry<String, List<UseLink>> linkEntry : linkGroup.map.entrySet()) {
 
-                    final LibreTupleBuffer buf = buffers.get(linkEntry.getKey());
+                    final LibreBuffer buf = buffers.get(linkEntry.getKey());
 
                     Map<Integer, List<Integer>> counterMap = computeForwardingPattern(linkEntry.getValue());
 
@@ -89,12 +89,12 @@ public class LibreBufferBuilder implements Serializable {
                         final List<Integer> destComponentIndices = counterEntry.getValue();
                         final int triggerCounter = counterEntry.getKey();
 
-                        callbacks.add(new LibreWindowCallback() {
+                        callbacks.add(new WindowResultCallback() {
                             int counter = 0;
                             @Override
-                            public void process(Tuple tuples) {
+                            public void process(Tuple tuple) {
                                 if (counter == triggerCounter)
-                                    buf.put(tuples, destComponentIndices);
+                                    buf.put(tuple, destComponentIndices);
                                 counter = (counter+1) % cycle;
                             }
                         });
@@ -107,10 +107,10 @@ public class LibreBufferBuilder implements Serializable {
 
                     final String bufferId = buffer.getId();
 
-                    callbacks.add(new LibreWindowCallback() {
+                    callbacks.add(new WindowResultCallback() {
                         @Override
-                        public void process(Tuple tuples) {
-                            bolt.getCollector().emit(bufferId, new Values(tuples.getValues().get(0)));
+                        public void process(Tuple tuple) {
+                            bolt.getCollector().emit(bufferId, new Values(tuple.getValues().get(0)));
                         }
                     });
                 }
@@ -275,7 +275,7 @@ public class LibreBufferBuilder implements Serializable {
         // partitions should be sorted in the ascending order of finish time
         // which should be done already
 
-        return (window.windowLength - partition.get(0).component.length) / window.pace + 1;
+        return (window.length - partition.get(0).component.length) / window.pace + 1;
     }
 
     protected List<Integer> computeAncestorStates(List<UseLink> partition, int pace, int windowLength) {

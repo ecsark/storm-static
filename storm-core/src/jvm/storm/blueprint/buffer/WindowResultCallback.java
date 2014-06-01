@@ -9,8 +9,8 @@ import java.io.Serializable;
  * Date: 5/14/14
  * Time: 3:13 PM
  */
-public interface LibreWindowCallback extends Serializable {
+public interface WindowResultCallback extends Serializable {
 
-    void process (Tuple tuples);
+    void process (Tuple tuple);
 
 }
