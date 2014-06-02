@@ -31,7 +31,7 @@ public class WindSpeedSpout extends BaseRichSpout {
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         _rand = new Random();
-        value = 300.0;
+        value = 50.0;
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -50,10 +50,10 @@ public class WindSpeedSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        Utils.sleep(20);
-        //if (_rand.nextBoolean())
-          //  value += _rand.nextDouble()*2;
-        //else
+        Utils.sleep(10);
+        if (_rand.nextBoolean())
+            value += _rand.nextDouble()*2;
+        else
             value -= _rand.nextDouble()*2;
         _collector.emit(new Values(value));
     }

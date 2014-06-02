@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class PatternBoltBuilder extends AutoBoltBuilder {
 
-    Map<Integer, RemainderGroup> windows;
+    transient Map<Integer, RemainderGroup> windows;
 
     PatternBoltBuilder() {
         super();

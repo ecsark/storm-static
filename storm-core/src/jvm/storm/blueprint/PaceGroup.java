@@ -14,7 +14,7 @@ public class PaceGroup implements Serializable{
 
     List<UseLink> links;
 
-    Map<Integer, List<ResultDeclaration>> registry;
+    transient Map<Integer, List<ResultDeclaration>> registry;
 
     int basePace;
 
@@ -51,11 +51,13 @@ public class PaceGroup implements Serializable{
         List<ResultDeclaration> reg = registry.get(start%basePace);
 
         for (ResultDeclaration declaration : reg) {
-            if (declaration.length==length && declaration.pace==pace && declaration.start==start%pace) {
+            //if (declaration.length==length && declaration.pace==pace && declaration.start==start%pace) {
+            if (declaration.length==length && declaration.pace==pace && declaration.start%pace==start%pace) {
                 return false;
             }
         }
-        reg.add(new ResultDeclaration(length, start%pace, pace, windowId));
+        //reg.add(new ResultDeclaration(length, start%pace, pace, windowId));
+        reg.add(new ResultDeclaration(length, start, pace, windowId));
         return true;
 
     }

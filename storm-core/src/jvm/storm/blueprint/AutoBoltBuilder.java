@@ -20,11 +20,11 @@ public abstract class AutoBoltBuilder implements Serializable {
 
     Fields inputFields;
 
-    Set<String> windowNames;
+    transient Set<String> windowNames;
 
-    Collection<TupleBuffer> buffers;
+    transient List<TupleBuffer> buffers;
 
-    Random rand;
+    transient Random rand;
 
     public AutoBoltBuilder() {
         windowNames = new HashSet<String>();

@@ -22,7 +22,7 @@ public class LibreBuffer extends TupleBuffer implements Serializable {
     protected int nextResult;
 
     int layers;
-    boolean coldStart = true;
+    boolean coldStart = true; //TODO: make private
     int coldNextResult = 0;
 
     Map<Integer, List<AggregationStrategy>> aggStrategies;
@@ -96,29 +96,39 @@ public class LibreBuffer extends TupleBuffer implements Serializable {
                     ++coldIndex;
                 }
                 if (coldIndex < ancestorStates.size()) {
-                    assert (ancestorStates.get(coldIndex) == destComponent);
-                    if (destComponent == size) { // this window is finished!
+                    if (ancestorStates.get(coldIndex) != destComponent)
+                        throw new RuntimeException("invalid");
+                    if (destComponent == (size-1)) { // this window is finished!
                         ++coldNextResult;
                         if (coldNextResult >= ancestorStates.size())
                             coldStart = false; // cold start done
-                    } else {
-                        ancestorStates.set(coldIndex, destComponent+1);
-                        continue; // skip the below
+
                     }
+                    ancestorStates.set(coldIndex, destComponent+1);
+
+                    continue; // skip the below
                 }
             }
 
             while (nextComponent[windIndex] > destComponent) {
                 windIndex = (windIndex + 1) % layers;
             }
-
-            assert(nextComponent[windIndex] == destComponent);//TODO: remove this line
-
+/*
+            if (nextComponent[windIndex] != destComponent) {//TODO: remove this line
+                throw new RuntimeException("invalid");
+            }
+*/
             tuples[windIndex][destComponent] = tuple;
             nextComponent[windIndex]++;
 
+            if (id.equals("340/20") && !coldStart) {
+                int a = 10;
+            }
+
+
             //sub-aggregation and callback goes here
-            partialAggregate(destComponent, windIndex);
+            if (aggStrategies.containsKey(destComponent))
+                partialAggregate(destComponent, windIndex);
 
 
             if (nextComponent[windIndex] == size) {
@@ -133,35 +143,34 @@ public class LibreBuffer extends TupleBuffer implements Serializable {
 
 
     private void partialAggregate (int trigger, int windIndex) {
-        if (aggStrategies.containsKey(trigger)) {
 
-            List<AggregationStrategy> stratList = aggStrategies.get(trigger);
+        List<AggregationStrategy> stratList = aggStrategies.get(trigger);
 
-            for (AggregationStrategy strategy : stratList) {
+        for (AggregationStrategy strategy : stratList) {
 
-                Tuple result = tuples[windIndex][trigger];
+            Tuple result = tuples[windIndex][trigger];
 
-                if (strategy.step.inputPositions.size() > 1) { // perform aggregation if there are multiple inputs
-                    List<List<Object>> objs = new ArrayList<List<Object>>();
+            if (strategy.step.inputPositions.size() > 1) { // perform aggregation if there are multiple inputs
+                List<List<Object>> objs = new ArrayList<List<Object>>();
 
-                    for (int inputPosition : strategy.step.inputPositions) {
-                        Tuple t = tuples[windIndex][inputPosition];
-                        List<Object> tupleSelected = t.select(selectFields);
-                        objs.add(tupleSelected);
-                    }
-
-                    // calculate the result and save it
-                    result = new FakeTuple(strategy.function.apply(objs));
+                for (int inputPosition : strategy.step.inputPositions) {
+                    Tuple t = tuples[windIndex][inputPosition];
+                    List<Object> tupleSelected = t.select(selectFields);
+                    objs.add(tupleSelected);
                 }
 
-                tuples[windIndex][strategy.step.outputPosition] = result;
+                // calculate the result and save it
+                result = new FakeTuple(strategy.function.apply(objs));
+            }
 
-                // observer notification
-                for (WindowResultCallback callback : strategy.callbacks) {
-                    callback.process(result);
-                }
+            tuples[windIndex][strategy.step.outputPosition] = result;
+
+            // observer notification
+            for (WindowResultCallback callback : strategy.callbacks) {
+                callback.process(result);
             }
         }
+
     }
 
 }

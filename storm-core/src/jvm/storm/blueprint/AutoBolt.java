@@ -9,7 +9,7 @@ import backtype.storm.tuple.Tuple;
 import storm.blueprint.buffer.IEntrance;
 import storm.blueprint.buffer.TupleBuffer;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class AutoBolt extends BaseBasicBolt {
 
-    Collection<TupleBuffer> buffers;
+    List<TupleBuffer> buffers;
 
     public void setOutputFields(Fields outputFields) {
         this.outputFields = outputFields;
@@ -40,7 +40,7 @@ public class AutoBolt extends BaseBasicBolt {
 
     IEntrance entrance;
 
-    Timing timer = new Timing(7000,700);
+    Timing timer = new Timing(10000,1000);
 
     @Override
     public void prepare(Map stormConf, TopologyContext context) {

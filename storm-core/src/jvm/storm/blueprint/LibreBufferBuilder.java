@@ -43,6 +43,7 @@ public class LibreBufferBuilder implements Serializable {
 
         // for each buffer
         for (LibreBuffer buffer : buffers.values()) {
+
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
             // add final aggregation result declare
@@ -279,6 +280,7 @@ public class LibreBufferBuilder implements Serializable {
     }
 
     protected List<Integer> computeAncestorStates(List<UseLink> partition, int pace, int windowLength) {
+
 
         int nAncestor = (windowLength-1) / pace;
 

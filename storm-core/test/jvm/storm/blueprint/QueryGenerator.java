@@ -26,12 +26,12 @@ public class QueryGenerator {
         return rand.nextInt();
     }
 
-    static List<Integer> generate (long seed, int num, int max) {
+    static List<Integer> generate (long seed, int num, int min, int max) {
         Random _rand;
         _rand = new Random(seed);
         List<Integer> res = new ArrayList<Integer>();
         for (int i=0; i<num; ++i)
-            res.add(_rand.nextInt(max-1)+1);
+            res.add(_rand.nextInt(max-min-1)+1+min);
 
         Collections.sort(res);
         print (res);

@@ -81,10 +81,10 @@ public class AutoBoltTest {
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
 
-        List<Integer> res = QueryGenerator.generate(5467, 100, 200);
+        List<Integer> res = QueryGenerator.generate(5467,2000, 20, 1000);
         Random rand = new Random();
         for (int r : res) {
-            builder.addWindow(r*5+"/5", r*5, 5);
+            builder.addWindow(r+"/20", r, 20);
         }
 
         return builder.build();
@@ -93,11 +93,12 @@ public class AutoBoltTest {
     public static void main (String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        builder.setBolt("sum", setupBolt4(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("sum", setupRandomBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("sum", setupRandomBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();
-        conf.setDebug(true);
+        conf.setDebug(false);
 
         ILocalCluster cluster = new LocalCluster();
         cluster.submitTopology("windspeed", conf, builder.createTopology());

@@ -12,9 +12,9 @@ import java.util.*;
  */
 public class LibreBoltBuilder extends AutoBoltBuilder {
 
-    SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
+    transient SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
 
-    List<LibreBuffer> entrances;
+    transient List<LibreBuffer> entrances;
 
 
     public LibreBoltBuilder() {
@@ -66,13 +66,22 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
         consolidate();
 
         LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
-        buffers = new ArrayList<TupleBuffer>();
+        buffers.clear();
         entrances = new ArrayList<LibreBuffer>();
 
         for (PaceGroup paceGroup : windows.values()) {
 
             Collection<LibreBuffer> newBuffers = bufferBuilder.build(paceGroup, function, inputFields, bolt);
+
             buffers.addAll(newBuffers);
+            Collections.sort(buffers, new Comparator<TupleBuffer>() {
+                @Override
+                public int compare(TupleBuffer o1, TupleBuffer o2) {
+                    if (o2.getPace()==o1.getPace())
+                        return o2.getLength()-o1.getLength();
+                    return o2.getPace()-o1.getPace();
+                }
+            });
 
             // find the entrance
             // remember base window is placed at the last!
@@ -85,8 +94,6 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
                 }
             }
         }
-
-        bolt.buffers = buffers;
 
         //TODO: correct this!
         entrances.get(0).allowColdStart(false);
