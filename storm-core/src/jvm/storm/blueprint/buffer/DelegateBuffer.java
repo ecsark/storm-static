@@ -50,7 +50,9 @@ public class DelegateBuffer extends TupleBuffer {
 
     public void put (Tuple tuple) {
         tuples[currentStep] = tuple;
+
         ++currentStep;
+
         if (currentStep == partSize.get(currentPartIndex)) {
 
             partialAggregate(currentStep);

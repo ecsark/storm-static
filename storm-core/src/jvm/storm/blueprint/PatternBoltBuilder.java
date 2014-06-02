@@ -63,17 +63,20 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
     }
 
     private List<Integer> computeClientPartSize (Delegate delegate, int pace, int remainder) {
+
         List<Integer> clientPartSize = new ArrayList<Integer>();
 
         int firstPartSize = remainder/delegate.pace * 2;
+        int secondPartSize = 0;
         int secondPartLength = pace - remainder;
 
         if (remainder%delegate.pace != 0) {
             firstPartSize += 1;
-            secondPartLength -= delegate.remainder;
+            secondPartSize += 1;
+            secondPartLength -= delegate.pace - delegate.remainder;
         }
 
-        int secondPartSize = secondPartLength/delegate.pace * 2;
+        secondPartSize += secondPartLength/delegate.pace * 2;
         if (secondPartLength%delegate.pace != 0) {
             secondPartSize += 1;
         }
@@ -91,6 +94,8 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
 
         DelegateBuffer buffer = new DelegateBuffer(id, partSize, delegate.pace);
         buffer.setEmitting(false);
+        buffer.setSelectFields(inputFields);
+        buffer.setFunction(function);
         buffers.add(buffer);
 
         // here we only allow a delegate to declaring 2 parts
@@ -105,6 +110,8 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
 
             // TODO: modify to accommodate more buffer types
             final FullWindowBuffer windowBuffer = new FullWindowBuffer(endClient.id, size, 2, endClient.length);
+            windowBuffer.setSelectFields(inputFields);
+            windowBuffer.setFunction(function);
             buffers.add(windowBuffer);
 
             windowBuffer.addCallback(new WindowResultCallback() {
@@ -127,7 +134,6 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
             List<Integer> clientPartSize = computeClientPartSize(delegate, client.pace, client.remainder);
 
             final DelegateBuffer clientBuffer = buildBuffer(client, clientPartSize);
-            buffers.add(clientBuffer);
 
             buffer.addCallback(new WindowResultCallback() {
                 @Override
@@ -160,28 +166,27 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
 
             DelegateBuffer baseBuffer = new DelegateBuffer(id, basePartSize, baseDelegate.pace);
             baseBuffer.setEmitting(false);
+            baseBuffer.setSelectFields(inputFields);
+            baseBuffer.setFunction(function);
             baseBuffers.add(baseBuffer);
 
             int partNum = baseDelegate.triggers.size();
 
-            if (!baseDelegate.triggers.contains(0)) {
-                partNum += 1;
-            }
-
             //NOTE entrance and base have the same pace!
-            for (int trigger : baseDelegate.triggers) {
+            for (int i=0; i<baseDelegate.triggers.size(); ++i) {
 
                 List<Integer> partSize = new ArrayList<Integer>();
 
-                partSize.add(trigger);
-                if (partNum - trigger!=0) {
-                    partSize.add(partNum - trigger);
+                partSize.add(i+1);
+                if (partNum-i > 1) { //force last part
+                    partSize.add(partNum - i - 1);
                 }
+
+                int trigger = baseDelegate.triggers.get(i);
 
                 for (Delegate entrance : baseDelegate.delegateMap.get(trigger)) {
 
                     final DelegateBuffer entranceBuffer = buildBuffer(entrance, partSize);
-                    buffers.add(entranceBuffer);
                     baseBuffer.addCallback(new WindowResultCallback() {
                         @Override
                         public void process(Tuple tuple) {

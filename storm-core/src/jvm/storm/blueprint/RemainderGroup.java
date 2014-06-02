@@ -29,15 +29,7 @@ public class RemainderGroup implements Serializable {
         windows = new ArrayList<WindowItem>();
         entrances = new ArrayList<Delegate>();
         baseDelegate = new BaseDelegate(basePace);
-        delegates = new TreeSet<Delegate>(new Comparator<Delegate>() {
-            @Override
-            public int compare(Delegate o1, Delegate o2) {
-                if (o2.pace==o1.pace) {
-                    return o2.remainder - o1.remainder;
-                }
-                return o2.pace - o1.pace;
-            }
-        });//descending order of pace
+        delegates = new TreeSet<Delegate>(new DelegateComparator());//descending order of pace
     }
 
     public void add(String id, int windowLength, int pace) {
@@ -154,6 +146,16 @@ public class RemainderGroup implements Serializable {
         shrink2();
 
     }
+
+    class DelegateComparator implements Comparator<Delegate>, Serializable {
+        @Override
+        public int compare(Delegate o1, Delegate o2) {
+            if (o2.pace==o1.pace) {
+                return o2.remainder - o1.remainder;
+            }
+            return o2.pace - o1.pace;
+        }//descending order of pace
+    }
 }
 
 
@@ -224,6 +226,8 @@ class BaseDelegate extends Delegate {
         if (delegateMap.containsKey(0)) {
             delegateMap.put(pace, delegateMap.get(0));
             delegateMap.remove(0);
+        } else {
+            delegateMap.put(pace, new ArrayList<Delegate>());
         }
 
         triggers = new ArrayList<Integer>(delegateMap.keySet());
@@ -231,3 +235,4 @@ class BaseDelegate extends Delegate {
     }
 
 }
+

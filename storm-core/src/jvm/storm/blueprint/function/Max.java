@@ -12,7 +12,7 @@ import java.util.List;
 public class Max implements Functional {
     @Override
     public Values apply(List<List<Object>> input) {
-        double max = Double.MIN_VALUE;
+        double max = -Double.MAX_VALUE;
 
         for(List<Object> obj : input) {
             double num = (Double) obj.get(0);

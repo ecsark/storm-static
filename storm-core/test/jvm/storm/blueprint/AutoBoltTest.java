@@ -13,7 +13,15 @@ import java.util.Random;
 
 public class AutoBoltTest {
 
-    static AutoBolt setupAutoBolt(AutoBoltBuilder builder) {
+    private static AutoBoltBuilder setupAutoBolt(AutoBoltBuilder builder, int[] length, int[] pace) {
+        for (int i=0; i<length.length; ++i) {
+            String id = Integer.toString(length[i])+"/"+Integer.toString(pace[i]);
+            builder.addWindow(id , length[i], pace[i]);
+        }
+        return builder;
+    }
+
+    static AutoBolt setupBolt1(AutoBoltBuilder builder) {
         return builder.setFunction(new Max())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -28,7 +36,7 @@ public class AutoBoltTest {
     }
 
 
-    static AutoBolt setupIssueBolt (AutoBoltBuilder builder) {
+    static AutoBolt setupBolt2(AutoBoltBuilder builder) {
         return builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -38,7 +46,7 @@ public class AutoBoltTest {
                 .build();
     }
 
-    static AutoBolt setupComparisonBolt (AutoBoltBuilder builder) {
+    static AutoBolt setupBolt3(AutoBoltBuilder builder) {
         return builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_max"))
@@ -58,7 +66,17 @@ public class AutoBoltTest {
     }
 
 
-    static AutoBolt setupAutoGeneratingBolt (AutoBoltBuilder builder) {
+    static AutoBolt setupBolt4(AutoBoltBuilder builder) {
+        int [] length = new int[] {8,12,13,17,28,33,32,38,48};
+        int [] pace = new int [] {5,5,10,10,20,30,20,20,40};
+        return setupAutoBolt(builder, length, pace)
+                .setFunction(new Max())
+                .setInputFields(new Fields("windspeed"))
+                .setOutputFields(new Fields("windspeed_max"))
+                .build();
+    }
+
+    static AutoBolt setupRandomBolt(AutoBoltBuilder builder) {
         builder.setFunction(new Sum())
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
@@ -75,7 +93,7 @@ public class AutoBoltTest {
     public static void main (String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        builder.setBolt("sum", setupAutoBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("sum", setupBolt4(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();
