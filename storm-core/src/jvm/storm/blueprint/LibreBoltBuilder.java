@@ -95,9 +95,7 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
             }
         }
 
-        //TODO: correct this!
-        entrances.get(0).allowColdStart(false);
-        bolt.setEntrance(new LibreEntranceBuffer(entrances.get(0)));
+        bolt.setEntrance(new LibreEntranceBuffer(entrances));
 
         return bolt;
     }

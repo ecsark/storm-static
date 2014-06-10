@@ -14,23 +14,31 @@ import java.util.List;
  */
 public class LibreEntranceBuffer implements IEntrance {
 
-    LibreBuffer buf;
-    List<Integer> position;
-    int size;
+    List<LibreBuffer> entrances;
+    List<List<Integer>> positions;
+    List<Integer> size;
 
 
-    LibreEntranceBuffer(LibreBuffer tupleBuffer) {
-        this.buf = tupleBuffer;
-        size = buf.getSize();
-        position = new ArrayList<Integer>();
-        position.add(0);
-        buf.allowColdStart(false);
+    LibreEntranceBuffer(List<LibreBuffer> tupleBuffer) {
+        this.entrances = tupleBuffer;
+        size = new ArrayList<Integer>();
+        positions = new ArrayList<List<Integer>>();
+
+        for (LibreBuffer entrance : entrances) {
+            List<Integer> pos = new ArrayList<Integer>();
+            pos.add(0);
+            positions.add(pos);
+            size.add(entrance.getSize());
+            entrance.allowColdStart(false);
+        }
     }
 
     @Override
     public void put(Tuple tuple) {
-
-        buf.put(tuple, position);
-        position.set(0, (position.get(0)+1)%size);
+        for (int i=0; i<entrances.size(); ++i) {
+            List<Integer> pos = positions.get(i);
+            entrances.get(i).put(tuple, pos);
+            pos.set(0, (pos.get(0) + 1) % size.get(i));
+        }
     }
 }

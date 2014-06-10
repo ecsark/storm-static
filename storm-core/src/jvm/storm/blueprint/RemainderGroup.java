@@ -17,9 +17,9 @@ public class RemainderGroup implements Serializable {
 
     Set<Delegate> delegates;
 
-    List<Delegate> entrances;
+    List<Delegate> bases;
 
-    BaseDelegate baseDelegate;
+    RootDelegate rootDelegate;
 
     int basePace;
 
@@ -27,8 +27,8 @@ public class RemainderGroup implements Serializable {
 
         this.basePace = basePace;
         windows = new ArrayList<WindowItem>();
-        entrances = new ArrayList<Delegate>();
-        baseDelegate = new BaseDelegate(basePace);
+        bases = new ArrayList<Delegate>();
+        rootDelegate = new RootDelegate(basePace);
         delegates = new TreeSet<Delegate>(new DelegateComparator());//descending order of pace
     }
 
@@ -45,10 +45,10 @@ public class RemainderGroup implements Serializable {
 
         Delegate currentDelegate = delegate;
 
-        // if there is no parent delegate, set up a new entrance
+        // if there is no parent delegate, set up a new base
         if (currentDelegate == null) {
             currentDelegate = new Delegate(basePace, window.length %basePace);
-            entrances.add(currentDelegate);
+            bases.add(currentDelegate);
             delegates.add(currentDelegate);
         }
 
@@ -105,8 +105,8 @@ public class RemainderGroup implements Serializable {
     }
 
     protected void shrink2 () {
-        for (Delegate entrance: entrances) {
-            shrink2(entrance);
+        for (Delegate base: bases) {
+            shrink2(base);
         }
     }
 
@@ -136,12 +136,12 @@ public class RemainderGroup implements Serializable {
         }
 
         // add root
-        // NOTE: baseDelegate is not in delegates!!!
-        baseDelegate.clients.clear();
-        for (Delegate entrance : entrances) {
-            baseDelegate.addClient(entrance);
+        // NOTE: rootDelegate is not in delegates!!!
+        rootDelegate.clients.clear();
+        for (Delegate base : bases) {
+            rootDelegate.addClient(base);
         }
-        baseDelegate.split();
+        rootDelegate.split();
 
         shrink2();
 
@@ -189,12 +189,12 @@ class Delegate implements Serializable {
 }
 
 
-class BaseDelegate extends Delegate {
+class RootDelegate extends Delegate {
 
     Map<Integer, List<Delegate>> delegateMap;
     List<Integer> triggers;
 
-    BaseDelegate (int pace) {
+    RootDelegate(int pace) {
         super();
         this.pace = pace;
         this.remainder = 0;

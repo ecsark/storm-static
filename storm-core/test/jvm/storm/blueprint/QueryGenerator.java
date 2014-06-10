@@ -45,7 +45,7 @@ public class QueryGenerator {
         for (int r : res) {
             System.out.print(r+"\t");
         }
-        System.out.println("===========End of generation==========");
+        System.out.println("\n===========End of generation==========");
     }
 
 

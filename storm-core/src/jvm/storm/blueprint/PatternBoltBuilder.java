@@ -151,29 +151,29 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
         consolidate();
         buffers.clear();
 
-        final List<DelegateBuffer> baseBuffers = new ArrayList<DelegateBuffer>();
+        final List<DelegateBuffer> rootBuffers = new ArrayList<DelegateBuffer>();
 
         for (RemainderGroup remainderGroup : windows.values()) {
 
-            BaseDelegate baseDelegate = remainderGroup.baseDelegate;
-            String id = "base_"+baseDelegate.pace;
+            RootDelegate rootDelegate = remainderGroup.rootDelegate;
+            String id = "root_"+ rootDelegate.pace;
 
-            List<Integer> basePartSize = new ArrayList<Integer>();
-            basePartSize.add(baseDelegate.triggers.get(0));
-            for (int i=1; i<baseDelegate.triggers.size(); ++i) {
-                basePartSize.add(baseDelegate.triggers.get(i) - baseDelegate.triggers.get(i-1));
+            List<Integer> rootPartSize = new ArrayList<Integer>();
+            rootPartSize.add(rootDelegate.triggers.get(0));
+            for (int i=1; i< rootDelegate.triggers.size(); ++i) {
+                rootPartSize.add(rootDelegate.triggers.get(i) - rootDelegate.triggers.get(i - 1));
             }
 
-            DelegateBuffer baseBuffer = new DelegateBuffer(id, basePartSize, baseDelegate.pace);
-            baseBuffer.setEmitting(false);
-            baseBuffer.setSelectFields(inputFields);
-            baseBuffer.setFunction(function);
-            baseBuffers.add(baseBuffer);
+            DelegateBuffer rootBuffer = new DelegateBuffer(id, rootPartSize, rootDelegate.pace);
+            rootBuffer.setEmitting(false);
+            rootBuffer.setSelectFields(inputFields);
+            rootBuffer.setFunction(function);
+            rootBuffers.add(rootBuffer);
 
-            int partNum = baseDelegate.triggers.size();
+            int partNum = rootDelegate.triggers.size();
 
-            //NOTE entrance and base have the same pace!
-            for (int i=0; i<baseDelegate.triggers.size(); ++i) {
+            //NOTE base and root have the same pace!
+            for (int i=0; i< rootDelegate.triggers.size(); ++i) {
 
                 List<Integer> partSize = new ArrayList<Integer>();
 
@@ -182,15 +182,15 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
                     partSize.add(partNum - i - 1);
                 }
 
-                int trigger = baseDelegate.triggers.get(i);
+                int trigger = rootDelegate.triggers.get(i);
 
-                for (Delegate entrance : baseDelegate.delegateMap.get(trigger)) {
+                for (Delegate base : rootDelegate.delegateMap.get(trigger)) {
 
-                    final DelegateBuffer entranceBuffer = buildBuffer(entrance, partSize);
-                    baseBuffer.addCallback(new WindowResultCallback() {
+                    final DelegateBuffer baseBuffer = buildBuffer(base, partSize);
+                    rootBuffer.addCallback(new WindowResultCallback() {
                         @Override
                         public void process(Tuple tuple) {
-                            entranceBuffer.put(tuple);
+                            baseBuffer.put(tuple);
                         }
                     });
                 }
@@ -200,7 +200,7 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
         bolt.entrance = new IEntrance() {
             @Override
             public void put(Tuple tuple) {
-                for (DelegateBuffer buffer : baseBuffers) {
+                for (DelegateBuffer buffer : rootBuffers) {
                     buffer.put(tuple);
                 }
             }

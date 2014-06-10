@@ -8,6 +8,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import storm.blueprint.buffer.IEntrance;
 import storm.blueprint.buffer.TupleBuffer;
+import storm.blueprint.util.Timer;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,14 @@ public class AutoBolt extends BaseBasicBolt {
 
     IEntrance entrance;
 
-    Timing timer = new Timing(10000,1000);
+    Timer timer;// = new Timer(10000,1000);
+
+    AutoBolt setTimer (Timer timer) {
+        this.timer = timer;
+        return this;
+    }
+
+    boolean firstRun = true;
 
     @Override
     public void prepare(Map stormConf, TopologyContext context) {
@@ -51,10 +59,16 @@ public class AutoBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
-        timer.beforeTest(); //TODO: remove timing
-        this.collector = collector;
+        if (firstRun) {
+            this.collector = collector;
+            if (timer!=null)
+                timer.beforeTest(); //TODO: remove timing
+        }
+
         entrance.put(input);
-        timer.afterTest(); //TODO: remove timing
+
+        if (timer!=null)
+            timer.afterTest(); //TODO: remove timing
     }
 
     @Override
