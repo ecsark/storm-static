@@ -5,10 +5,10 @@ import junit.framework.TestCase;
 import java.util.Collection;
 import java.util.List;
 
-public class PaceGroupTest extends TestCase {
+public class LibreGroupTest extends TestCase {
 
     LibreBoltBuilder wm;
-    Collection<PaceGroup> paceGroups;
+    Collection<LibreGroup> libreGroups;
 
 
     public void setUp() throws Exception {
@@ -23,7 +23,7 @@ public class PaceGroupTest extends TestCase {
         addWindow(32, 20);
         addWindow(38, 20);
         addWindow(48, 40);
-        paceGroups = wm.windows.values();
+        libreGroups = wm.windows.values();
     }
 
     public void setUp2() throws Exception {
@@ -36,7 +36,7 @@ public class PaceGroupTest extends TestCase {
         addWindow(12, 5);
         //addWindow(26, 5);
 
-        paceGroups = wm.windows.values();
+        libreGroups = wm.windows.values();
     }
 
     public void setUp1() throws Exception {
@@ -47,7 +47,7 @@ public class PaceGroupTest extends TestCase {
         addWindow(600, 30);
         addWindow(45, 5);
 
-        paceGroups = wm.windows.values();
+        libreGroups = wm.windows.values();
     }
 
     private void addWindow (int length, int pace) {
@@ -67,7 +67,7 @@ public class PaceGroupTest extends TestCase {
 
 
     private void printDeclarations () {
-        for (PaceGroup pg : paceGroups) {
+        for (LibreGroup pg : libreGroups) {
             for (List<ResultDeclaration> decList : pg.registry.values()) {
                 for (ResultDeclaration declaration : decList) {
                     System.out.println(declaration);
@@ -77,7 +77,7 @@ public class PaceGroupTest extends TestCase {
     }
 
     private void printUseLinks() {
-        for (PaceGroup pg : paceGroups) {
+        for (LibreGroup pg : libreGroups) {
             double cpu = 0;
             for (UseLink link : pg.links) {
                 System.out.println(link);

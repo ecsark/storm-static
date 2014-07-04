@@ -11,7 +11,7 @@ import java.util.*;
  * Date: 5/31/14
  * Time: 9:39 PM
  */
-public class RemainderGroup implements Serializable {
+public class PatternGroup implements Serializable {
 
     List<WindowItem> windows;
 
@@ -23,7 +23,7 @@ public class RemainderGroup implements Serializable {
 
     int basePace;
 
-    RemainderGroup (int basePace) {
+    PatternGroup(int basePace) {
 
         this.basePace = basePace;
         windows = new ArrayList<WindowItem>();
@@ -36,7 +36,7 @@ public class RemainderGroup implements Serializable {
         windows.add(new WindowItem(id, windowLength, pace));
     }
 
-    public void merge(RemainderGroup another) {
+    public void merge(PatternGroup another) {
         windows.addAll(another.windows);
     }
 

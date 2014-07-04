@@ -20,14 +20,14 @@ import java.util.*;
  */
 public class LibreBufferBuilder implements Serializable {
 
-    public Collection<LibreBuffer> build (PaceGroup paceGroup, Functional function, Fields selectField,
+    public Collection<LibreBuffer> build (LibreGroup libreGroup, Functional function, Fields selectField,
                                                final AutoBolt bolt) {
 
-        Map<String, List<ResultDependency>> dependencies = resolveDependencies(paceGroup.links);
-        Map<String, List<UseLink>> partitions = extractPartition(paceGroup.links);
+        Map<String, List<ResultDependency>> dependencies = resolveDependencies(libreGroup.links);
+        Map<String, List<UseLink>> partitions = extractPartition(libreGroup.links);
         Map<String, LibreBuffer> buffers = new HashMap<String, LibreBuffer>();
 
-        for (WindowItem window : paceGroup.windows) {
+        for (WindowItem window : libreGroup.windows) {
 
             LibreBuffer buffer;
 

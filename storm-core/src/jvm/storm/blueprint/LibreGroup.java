@@ -8,7 +8,7 @@ import java.util.*;
  * Date: 5/10/14
  * Time: 12:02 PM
  */
-public class PaceGroup implements Serializable{
+public class LibreGroup implements Serializable{
 
     List<WindowItem> windows;
 
@@ -18,7 +18,7 @@ public class PaceGroup implements Serializable{
 
     int basePace;
 
-    public PaceGroup () {
+    public LibreGroup() {
         windows = new ArrayList<WindowItem>();
         registry = new HashMap<Integer, List<ResultDeclaration>>();
         links = new ArrayList<UseLink>();
@@ -39,7 +39,7 @@ public class PaceGroup implements Serializable{
         });
     }
 
-    public void merge(PaceGroup another) {
+    public void merge(LibreGroup another) {
         windows.addAll(another.windows);
     }
 

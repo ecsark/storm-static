@@ -19,11 +19,11 @@ import java.util.Map;
  */
 public class PatternBoltBuilder extends AutoBoltBuilder {
 
-    transient Map<Integer, RemainderGroup> windows;
+    transient Map<Integer, PatternGroup> windows;
 
     PatternBoltBuilder() {
         super();
-        windows = new HashMap<Integer, RemainderGroup>();
+        windows = new HashMap<Integer, PatternGroup>();
     }
 
 
@@ -33,10 +33,10 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
         String windowName = uniqueWindowName(id);
 
         if (!windows.containsKey(pace))
-            windows.put(pace, new RemainderGroup(pace));
-        RemainderGroup remainderGroup = windows.get(pace);
+            windows.put(pace, new PatternGroup(pace));
+        PatternGroup patternGroup = windows.get(pace);
 
-        remainderGroup.add(windowName, windowLength, pace);
+        patternGroup.add(windowName, windowLength, pace);
         return this;
     }
 
@@ -57,8 +57,8 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
             windows.remove(pace);
         }
 
-        for (RemainderGroup remainderGroup : windows.values()) {
-            remainderGroup.organize();
+        for (PatternGroup patternGroup : windows.values()) {
+            patternGroup.organize();
         }
     }
 
@@ -98,7 +98,7 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
         buffer.setFunction(function);
         buffers.add(buffer);
 
-        // here we only allow a delegate to declaring 2 parts
+        // here we only allow a delegate to declare 2 parts
         assert(partSize.size() == 2);
 
 
@@ -153,9 +153,9 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
 
         final List<DelegateBuffer> rootBuffers = new ArrayList<DelegateBuffer>();
 
-        for (RemainderGroup remainderGroup : windows.values()) {
+        for (PatternGroup patternGroup : windows.values()) {
 
-            RootDelegate rootDelegate = remainderGroup.rootDelegate;
+            RootDelegate rootDelegate = patternGroup.rootDelegate;
             String id = "root_"+ rootDelegate.pace;
 
             List<Integer> rootPartSize = new ArrayList<Integer>();

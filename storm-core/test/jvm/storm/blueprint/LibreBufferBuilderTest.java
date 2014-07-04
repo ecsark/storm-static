@@ -12,7 +12,7 @@ public class LibreBufferBuilderTest {
     LibreBufferBuilder builder = new LibreBufferBuilder();
 
     LibreBoltBuilder wm;
-    Collection<PaceGroup> paceGroups;
+    Collection<LibreGroup> libreGroups;
 
     private void addWindow (int length, int pace) {
         wm.addWindow(length + "/" + pace, length, pace);
@@ -28,7 +28,7 @@ public class LibreBufferBuilderTest {
         addWindow(12, 5);
         addWindow(26, 5);
 
-        paceGroups = wm.windows.values();
+        libreGroups = wm.windows.values();
         wm.consolidate();
     }
 
@@ -36,7 +36,7 @@ public class LibreBufferBuilderTest {
     public void testBuild() throws Exception {
         setUp();
         Collection<LibreBuffer> tupleBuffers =
-                builder.build(paceGroups.iterator().next(), new Max(),
+                builder.build(libreGroups.iterator().next(), new Max(),
                         new Fields("windspeed"), new AutoBolt());
     }
 }

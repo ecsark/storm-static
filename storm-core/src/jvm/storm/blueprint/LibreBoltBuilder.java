@@ -12,14 +12,14 @@ import java.util.*;
  */
 public class LibreBoltBuilder extends AutoBoltBuilder {
 
-    transient SortedMap<Integer, PaceGroup> windows; //sorted by the pace in the descending order
+    transient SortedMap<Integer, LibreGroup> windows; //sorted by the pace in the descending order
 
     transient List<LibreBuffer> entrances;
 
 
     public LibreBoltBuilder() {
         super();
-        windows = new TreeMap<Integer, PaceGroup>(Collections.reverseOrder());
+        windows = new TreeMap<Integer, LibreGroup>(Collections.reverseOrder());
     }
 
     @Override
@@ -32,10 +32,10 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
         windowNames.add(id);
 
         if (!windows.containsKey(pace))
-            windows.put(pace, new PaceGroup());
-        PaceGroup paceGroup = windows.get(pace);
+            windows.put(pace, new LibreGroup());
+        LibreGroup libreGroup = windows.get(pace);
 
-        paceGroup.add(id, windowLength, pace);
+        libreGroup.add(id, windowLength, pace);
         return this;
     }
 
@@ -56,8 +56,8 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
             windows.remove(pace);
         }
 
-        for (PaceGroup paceGroup : windows.values()) {
-            paceGroup.organize();
+        for (LibreGroup libreGroup : windows.values()) {
+            libreGroup.organize();
         }
     }
 
@@ -69,9 +69,9 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
         buffers.clear();
         entrances = new ArrayList<LibreBuffer>();
 
-        for (PaceGroup paceGroup : windows.values()) {
+        for (LibreGroup libreGroup : windows.values()) {
 
-            Collection<LibreBuffer> newBuffers = bufferBuilder.build(paceGroup, function, inputFields, bolt);
+            Collection<LibreBuffer> newBuffers = bufferBuilder.build(libreGroup, function, inputFields, bolt);
 
             buffers.addAll(newBuffers);
             Collections.sort(buffers, new Comparator<TupleBuffer>() {
@@ -85,7 +85,7 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
 
             // find the entrance
             // remember base window is placed at the last!
-            String entranceName = paceGroup.windows.get(paceGroup.windows.size()-1).id;
+            String entranceName = libreGroup.windows.get(libreGroup.windows.size()-1).id;
 
             for (LibreBuffer buf : newBuffers) {
                 if (buf.getId().equals(entranceName)) {

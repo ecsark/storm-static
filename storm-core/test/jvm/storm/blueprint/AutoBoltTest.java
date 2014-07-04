@@ -86,7 +86,7 @@ public class AutoBoltTest {
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
 
-        List<Integer> res = QueryGenerator.generate(5467, 100, 20, 1000);
+        List<Integer> res = QueryGenerator.generate(5467, 1000, 20, 1000);
         Random rand = new Random();
         for (int r : res) {
             builder.addWindow(r+"/20", r, 20);
