@@ -78,6 +78,12 @@ public class PaceGroup implements Serializable{
             int maxLength = -1;
 
             for (ResultDeclaration res : registry.get(start%basePace)) {
+                /*
+                 *   TODO:
+                 *         Actually a part can be reused
+                 *         if start%res.pace==res.start%res.pace,
+                 *         but the cold start problem has to be solved.
+                 */
                 if (res.length > maxLength && pace%res.pace == 0 && res.length <= length
                         && start%res.pace == res.start) {
                     maxLength = res.length;
@@ -127,12 +133,19 @@ public class PaceGroup implements Serializable{
         String baseName = "_base"+basePace;
 
         for (int i=0; i<sep.size()-1; ++i) {
+            // register each block
             register(sep.get(i+1)-sep.get(i), sep.get(i),
                     basePace, baseName);
+            // register cumulative block
+            if (i > 1) {
+                register(sep.get(i + 1), 0, basePace, baseName);
+            }
         }
 
         // register a complete pace
         register(basePace, 0, basePace, baseName);
+
+        // add baseWindow to windows
         WindowItem baseWindow = new WindowItem(baseName, basePace, basePace);
         baseWindow.setEmitting(false);
         windows.add(baseWindow); // NOTE HERE: base window is placed at the very rear!
