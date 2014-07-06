@@ -20,14 +20,16 @@ import java.util.*;
  */
 public class LibreBufferBuilder implements Serializable {
 
-    public Collection<LibreBuffer> build (LibreGroup libreGroup, Functional function, Fields selectField,
-                                               final AutoBolt bolt) {
+    public Collection<LibreBuffer> build (List<UseLink> links, Collection<WindowItem> windows,
+                                          Functional function,
+                                          Fields selectField,
+                                          final AutoBolt bolt) {
 
-        Map<String, List<ResultDependency>> dependencies = resolveDependencies(libreGroup.links);
-        Map<String, List<UseLink>> partitions = extractPartition(libreGroup.links);
+        Map<String, List<ResultDependency>> dependencies = resolveDependencies(links);
+        Map<String, List<UseLink>> partitions = extractPartition(links);
         Map<String, LibreBuffer> buffers = new HashMap<String, LibreBuffer>();
 
-        for (WindowItem window : libreGroup.windows) {
+        for (WindowItem window : windows) {
 
             LibreBuffer buffer;
 
@@ -178,6 +180,7 @@ public class LibreBufferBuilder implements Serializable {
     private Map<String, List<UseLink>> extractPartition (List<UseLink> links) {
         Map<String, List<UseLink>> partitions = new HashMap<String, List<UseLink>>();
 
+        // group by receiver
         for (UseLink link : links) {
 
             if (!partitions.containsKey(link.dest))

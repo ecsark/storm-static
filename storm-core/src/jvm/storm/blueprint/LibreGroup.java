@@ -153,7 +153,7 @@ public class LibreGroup implements Serializable{
         // construct base window using underlying unit window
         ResultDeclaration dummy = new ResultDeclaration(1,0,1,"_unit");
         for (int i=0; i<basePace; ++i) {
-            links.add(new UseLink(baseName, dummy, i, 5));
+            links.add(new UseLink(baseName, dummy, i, basePace));
         }
     }
 

@@ -71,7 +71,8 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
 
         for (LibreGroup libreGroup : windows.values()) {
 
-            Collection<LibreBuffer> newBuffers = bufferBuilder.build(libreGroup, function, inputFields, bolt);
+            Collection<LibreBuffer> newBuffers = bufferBuilder.build(libreGroup.links, libreGroup.windows, function,
+                    inputFields, bolt);
 
             buffers.addAll(newBuffers);
             Collections.sort(buffers, new Comparator<TupleBuffer>() {

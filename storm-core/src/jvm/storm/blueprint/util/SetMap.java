@@ -8,15 +8,15 @@ import java.util.*;
  * Date: 5/15/14
  * Time: 4:27 PM
  */
-public class ListMap <K, V> implements Serializable {
+public class SetMap<K, V> implements Serializable {
 
-    public Map<K, List<V>> map;
+    public Map<K, Set<V>> map;
 
-    public ListMap () {
-        map = new HashMap<K, List<V>>();
+    public SetMap() {
+        map = new HashMap<K, Set<V>>();
     }
 
-    public ListMap (Collection<V> collection, KeyExtractable<K, V> keyExtractable) {
+    public SetMap(Collection<V> collection, KeyExtractable<K, V> keyExtractable) {
         this();
         load(collection, keyExtractable);
     }
@@ -32,42 +32,36 @@ public class ListMap <K, V> implements Serializable {
         map.get(key).add(value);
     }
 
-    public void putUnique (K key, V value) {
-        touch(key);
-        if (!map.get(key).contains(value))
-            map.get(key).add(value);
-    }
-
     public void touch (K key) {
         if (!map.containsKey(key))
-            map.put(key, new ArrayList<V>());
+            map.put(key, new HashSet<V>());
     }
 
     public interface KeyExtractable <A, B> {
-        A getKey (B item);
+        A getKey(B item);
     }
 
-    public Map<K, List<V>> getMap () {
+    public Map<K, Set<V>> getMap () {
         return map;
     }
 
-    public List<V> get (K key) {
+    public Set<V> get (K key) {
         return map.get(key);
     }
 
-    public Set<Map.Entry<K, List<V>>> entrySet() {
+    public Set<Map.Entry<K, Set<V>>> entrySet() {
         return map.entrySet();
     }
 
     public List<V> values () {
         List<V> vals = new ArrayList<V>();
-        for (List<V> v : map.values()) {
+        for (Set<V> v : map.values()) {
             vals.addAll(v);
         }
         return vals;
     }
 
-    public Set<K> keySet () {
+    public Set<K> keysSet () {
         return map.keySet();
     }
 
