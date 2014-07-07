@@ -70,6 +70,10 @@ public class Registry {
     }
 
     public static List<ResultDeclaration> find (int pace, int start, int max) {
+        return find (pace, start, max, false);
+    }
+
+    public static List<ResultDeclaration> find (int pace, int start, int max, boolean allowUnit) {
         List<ResultDeclaration> results = new ArrayList<ResultDeclaration>();
 
         Map<Integer, ListMap<Integer, ResultDeclaration>> reg = instance().declarations;
@@ -78,8 +82,13 @@ public class Registry {
             if (pace % p == 0) {
                 if (reg.get(p).containsKey(start%p)) {
                     for (ResultDeclaration d : reg.get(p).get(start%p)) {
-                        if (d.length <= max)
+                        if (d.length <= max) { // unit will not be used!!
+                            if (!allowUnit && d.windowId.startsWith("__unit"))
+                                continue;
                             results.add(d);
+
+                        }
+
                     }
                 }
             }

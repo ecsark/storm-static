@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class FullWindowBuffer extends TupleBuffer implements IEntrance {
 
-    private List<WindowResultCallback> callbacks;
+    protected List<WindowResultCallback> callbacks;
 
     protected Tuple[] tuples;
     protected int head;
@@ -56,7 +56,7 @@ public class FullWindowBuffer extends TupleBuffer implements IEntrance {
         }
     }
 
-    private void partialAggregate() {
+    void partialAggregate() {
 
         List<List<Object>> objs = new ArrayList<List<Object>>();
 

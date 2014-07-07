@@ -20,14 +20,19 @@ import java.util.*;
  */
 public class LibreBufferBuilder implements Serializable {
 
+    transient Map<String, List<UseLink>> partitions;
+    transient Map<String, LibreBuffer> buffers;
+
+
     public Collection<LibreBuffer> build (List<UseLink> links, Collection<WindowItem> windows,
                                           Functional function,
                                           Fields selectField,
                                           final AutoBolt bolt) {
 
         Map<String, List<ResultDependency>> dependencies = resolveDependencies(links);
-        Map<String, List<UseLink>> partitions = extractPartition(links);
-        Map<String, LibreBuffer> buffers = new HashMap<String, LibreBuffer>();
+        extractPartition(links);
+
+        buffers = new HashMap<String, LibreBuffer>();
 
         for (WindowItem window : windows) {
 
@@ -44,7 +49,7 @@ public class LibreBufferBuilder implements Serializable {
         }
 
         // for each buffer
-        for (LibreBuffer buffer : buffers.values()) {
+        for (final LibreBuffer buffer : buffers.values()) {
 
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
@@ -93,12 +98,12 @@ public class LibreBufferBuilder implements Serializable {
                         final int triggerCounter = counterEntry.getKey();
 
                         callbacks.add(new WindowResultCallback() {
-                            int counter = 0;
+                            int step = 0;
                             @Override
                             public void process(Tuple tuple) {
-                                if (counter == triggerCounter)
+                                if (step == triggerCounter)
                                     buf.put(tuple, destComponentIndices);
-                                counter = (counter+1) % cycle;
+                                step = (step +1) % cycle;
                             }
                         });
                     }
@@ -109,11 +114,11 @@ public class LibreBufferBuilder implements Serializable {
                         && aggStep.dependencies.declaration.length==buffer.getLength()) {
 
                     final String bufferId = buffer.getId();
-
                     callbacks.add(new WindowResultCallback() {
                         @Override
                         public void process(Tuple tuple) {
                             bolt.getCollector().emit(bufferId, new Values(tuple.getValues().get(0)));
+                            //ResultWriter.write(bolt.getId(), bufferId+": "+tuple.getValues().get(0)+"\n");
                         }
                     });
                 }
@@ -122,10 +127,7 @@ public class LibreBufferBuilder implements Serializable {
                 buffer.addAggregationStrategy(strategy);
 
             }
-
         }
-
-        // TODO: set entrance?
 
         return buffers.values();
     }
@@ -178,7 +180,8 @@ public class LibreBufferBuilder implements Serializable {
     }
 
     private Map<String, List<UseLink>> extractPartition (List<UseLink> links) {
-        Map<String, List<UseLink>> partitions = new HashMap<String, List<UseLink>>();
+
+        partitions = new HashMap<String, List<UseLink>>();
 
         // group by receiver
         for (UseLink link : links) {
@@ -221,12 +224,12 @@ public class LibreBufferBuilder implements Serializable {
         Goal: reducing the number of steps
      */
     private List<AggregationDependency> generateAggregationStep (List<ResultDependency> dependencies,
-                                                           List<UseLink> partitions) {
+                                                           List<UseLink> partitioning) {
 
         // dependencies should be sorted in the ascending order of <finish time, length>
         // which should be done already
 
-        // partitions should be sorted in the ascending order of finish time
+        // partitioning should be sorted in the ascending order of finish time
         // which should be done already
 
         List<AggregationDependency> steps = new ArrayList<AggregationDependency>();
@@ -237,12 +240,12 @@ public class LibreBufferBuilder implements Serializable {
 
             ResultDependency dec = decIter.next();
 
-            for (int i=0; i<partitions.size(); ++i) {
-                UseLink partition = partitions.get(i);
+            for (int i=0; i<partitioning.size(); ++i) {
+                UseLink partition = partitioning.get(i);
 
                 while (partition.start+partition.component.length == dec.declaration.start+dec.declaration.length) {
                     for (int j=i; j>=0; --j) {
-                        UseLink firstPartition = partitions.get(j);
+                        UseLink firstPartition = partitioning.get(j);
                         if (firstPartition.start == dec.declaration.start) {
                             steps.add(new AggregationDependency(new AggregationStep(quickList(j,i), j, i), dec));
                             break;
@@ -276,7 +279,7 @@ public class LibreBufferBuilder implements Serializable {
 
     protected int computeLayerNum(WindowItem window, List<UseLink> partition) {
 
-        // partitions should be sorted in the ascending order of finish time
+        // partition should be sorted in the ascending order of finish time
         // which should be done already
 
         return (window.length - partition.get(0).component.length) / window.pace + 1;
@@ -309,7 +312,7 @@ public class LibreBufferBuilder implements Serializable {
 
 
     // <triggerCounter, List<destComponentIds>>
-    protected Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
+    protected static Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
 
         if (links.size() == 0) {
             return new HashMap<Integer, List<Integer>>();

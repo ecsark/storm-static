@@ -8,6 +8,7 @@ import backtype.storm.tuple.Fields;
 import storm.blueprint.function.Max;
 import storm.blueprint.function.Sum;
 import storm.blueprint.util.Counter;
+import storm.blueprint.util.ResultWriter;
 import storm.blueprint.util.Timer;
 
 import java.util.List;
@@ -86,17 +87,18 @@ public class AutoBoltTest {
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
 
-        List<Integer> res = QueryGenerator.generate(5467, 1000, 20, 1000);
+        List<Integer> res = QueryGenerator.generate(5467, 100, 20, 1000);
         Random rand = new Random();
         for (int r : res) {
             builder.addWindow(r+"/20", r, 20);
         }
 
-        return builder.build().setTimer(new Timer(3000, 1000)
+        return builder.build().setTimer(new Timer(2000, 1000)
                 .addCallback(new Timer.TaskFinishedCallback() {
             @Override
             public void onTaskFinished() {
                 System.out.println("Aggregation counts: " + counter.getCount());
+                //ResultWriter.closeAll();
                 counter.setCount(0);
             }
         }));
@@ -104,10 +106,14 @@ public class AutoBoltTest {
 
     public static void main (String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
+
+        //builder.setSpout("spout", new TestSpout(), 1);
         builder.setSpout("spout", new WindSpeedSpout(), 1);
-        //builder.setBolt("sum", setupRandomBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("sum", setupRandomBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
-        //builder.setBolt("sum", setupRandomBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
+
+        builder.setBolt("pattern", setupRandomBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("libre", setupRandomBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("naive", setupRandomBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("super", setupRandomBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();

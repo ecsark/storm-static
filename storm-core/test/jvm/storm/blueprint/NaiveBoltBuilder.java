@@ -16,7 +16,7 @@ public class NaiveBoltBuilder extends AutoBoltBuilder {
 
     @Override
     public AutoBoltBuilder addWindow(String id, int length, int pace) {
-        String windowName = uniqueWindowName(id);
+        final String windowName = uniqueWindowName(id);
         final FullWindowBuffer buffer = new FullWindowBuffer(windowName, length, pace, length);
         buffer.setSelectFields(inputFields);
         buffer.setFunction(function);
@@ -24,6 +24,8 @@ public class NaiveBoltBuilder extends AutoBoltBuilder {
             @Override
             public void process(Tuple tuple) {
                 bolt.getCollector().emit(buffer.getId(), new Values(tuple.getValues().get(0)));
+                //ResultWriter.write(bolt.getId(), windowName + ": " + tuple.getValues().get(0) + "\n");
+
             }
         });
         buffers.add(buffer);

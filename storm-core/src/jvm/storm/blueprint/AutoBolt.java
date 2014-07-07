@@ -49,12 +49,18 @@ public class AutoBolt extends BaseBasicBolt {
     }
 
     boolean firstRun = true;
+    String id;
+
+    public String getId() {
+        return id;
+    }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context) {
         if (entrance == null) {
             throw new RuntimeException("Tuple entrance has not been set!");
         }
+        id = context.getThisComponentId();
     }
 
     @Override

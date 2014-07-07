@@ -118,6 +118,7 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
                 @Override
                 public void process(Tuple tuple) {
                     bolt.getCollector().emit(endClient.id, new Values(tuple.getValues().get(0)));
+                    //ResultWriter.write(bolt.getId(), endClient.id + ": " + tuple.getValues().get(0) + "\n");
                 }
             });
 

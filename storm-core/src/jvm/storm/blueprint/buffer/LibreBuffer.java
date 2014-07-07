@@ -3,7 +3,6 @@ package storm.blueprint.buffer;
 import backtype.storm.tuple.Tuple;
 import storm.blueprint.function.Functional;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +13,7 @@ import java.util.Map;
  * Date: 5/14/14
  * Time: 11:12 AM
  */
-public class LibreBuffer extends TupleBuffer implements Serializable {
+public class LibreBuffer extends TupleBuffer {
 
     protected Tuple[][] tuples;
     protected int[] nextComponent;
@@ -113,17 +112,14 @@ public class LibreBuffer extends TupleBuffer implements Serializable {
             while (nextComponent[windIndex] > destComponent) {
                 windIndex = (windIndex + 1) % layers;
             }
-/*
+
+            /*
             if (nextComponent[windIndex] != destComponent) {//TODO: remove this line
                 throw new RuntimeException("invalid");
-            }
-*/
+            }*/
+
             tuples[windIndex][destComponent] = tuple;
             nextComponent[windIndex]++;
-
-            if (id.equals("340/20") && !coldStart) {
-                int a = 10;
-            }
 
 
             //sub-aggregation and callback goes here

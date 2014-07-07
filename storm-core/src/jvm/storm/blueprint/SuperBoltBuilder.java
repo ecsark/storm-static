@@ -1,5 +1,6 @@
 package storm.blueprint;
 
+import storm.blueprint.buffer.ColdBuffer;
 import storm.blueprint.buffer.LibreBuffer;
 import storm.blueprint.util.Divisor;
 import storm.blueprint.util.ListMap;
@@ -12,7 +13,7 @@ import java.util.*;
  * Date: 7/4/14
  * Time: 6:39 PM
  */
-public class SuperBoltBuilder extends AutoBoltBuilder{
+public class SuperBoltBuilder extends AutoBoltBuilder {
 
     transient ListMap<Integer, WindowItem> windows; // pace -> [query...]
     transient SetMap<Integer, Integer> groups; // pace -> [remainder...]
@@ -31,7 +32,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder{
 
         String windowName = uniqueWindowName(id);
 
-        WindowItem window = new WindowItem(id, windowLength, pace);
+        WindowItem window = new WindowItem(windowName, windowLength, pace);
         windows.put(pace, window);
 
         groups.put(pace, windowLength % pace);
@@ -136,11 +137,13 @@ public class SuperBoltBuilder extends AutoBoltBuilder{
         List<Integer> r = new ArrayList<Integer>(groups.get(pace));
         Collections.sort(r);
 
+        boolean isEntrance = id.startsWith("__entrance");
+
         int start = 0;
         for (int i=1; i<r.size(); ++i) {
             // construct
             while (start < r.get(i)) {
-                ResultDeclaration declaration = Registry.getLongest(Registry.find(pace, start, r.get(i)-start));
+                ResultDeclaration declaration = Registry.getLongest(Registry.find(pace, start, r.get(i)-start, isEntrance));
                 Registry.reuse(new UseLink(id, declaration, start, pace));
                 start += declaration.length;
             }
@@ -262,8 +265,6 @@ public class SuperBoltBuilder extends AutoBoltBuilder{
         }
 
         // build window buffer
-        LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
-
         List<WindowItem> allWindows = windows.values();
 
         // make delegate WindowItem
@@ -278,6 +279,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder{
         }
 
         // build buffer!
+        LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
         Collection<LibreBuffer> newBuffers = bufferBuilder.build(Registry.getLinks(), allWindows, function,
                 inputFields, bolt);
         buffers.addAll(newBuffers);
@@ -289,9 +291,19 @@ public class SuperBoltBuilder extends AutoBoltBuilder{
                 entranceBuffers.add(buf);
         }
 
-        bolt.setEntrance(new LibreEntranceBuffer(entranceBuffers));
+        LibreEntranceBuffer entranceBuffer = new LibreEntranceBuffer(entranceBuffers);
+
+        // build coldBuffer!
+        List<ColdBuffer> coldBuffers = new ColdBufferBuilder().build(bufferBuilder.buffers,
+                bufferBuilder.partitions.values());
+
+        for (ColdBuffer buf : coldBuffers) {
+            entranceBuffer.addColdBuffer(buf);
+        }
+
+        bolt.setEntrance(entranceBuffer);
 
 
-        return null;
+        return bolt;
     }
 }
