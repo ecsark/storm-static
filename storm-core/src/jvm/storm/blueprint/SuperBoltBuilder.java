@@ -107,13 +107,14 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             Iterator<Integer> recIterator = e.getValue().iterator();
             while (recIterator.hasNext()) {
                 int receiver = recIterator.next();
-                if (!paces.contains(receiver) ) {
+                if (!paces.contains(receiver) ) { // not a query
                     if (topology.get(receiver).size() < 1) {
                         recIterator.remove();
                         keysToRemove.add(receiver);
                     } else if (topology.get(receiver).size() == 1 && receiver == e.getKey()*2) { // a 2-fold increment
                         recIterator.remove();
                         receiversToAdd.add(topology.get(receiver).get(0));
+                        topology.get(receiver).clear();
                         keysToRemove.add(receiver);
                     }
                 }
@@ -214,6 +215,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
                 for (int receiver : topology.get(pace)) {
                     for (int rem : groups.get(receiver))
                         remainders.add(rem % pace);
+
                 }
             }
         }
@@ -236,6 +238,10 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             entrances.addAll(topology.get(entrance));
             if (windows.containsKey(entrance)) { // if it's the pace of a query
                 entrances.add(entrance);
+            } else {
+                paces.remove(0);
+                windows.getMap().remove(entrance);
+                groups.getMap().remove(entrance);
             }
         }
 
@@ -295,7 +301,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
         // build coldBuffer!
         List<ColdBuffer> coldBuffers = new ColdBufferBuilder().build(bufferBuilder.buffers,
-                bufferBuilder.partitions.values());
+                bufferBuilder.partitions.values(), function, inputFields);
 
         for (ColdBuffer buf : coldBuffers) {
             entranceBuffer.addColdBuffer(buf);

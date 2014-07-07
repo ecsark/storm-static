@@ -34,10 +34,22 @@ public class QueryGenerator {
             res.add(_rand.nextInt(max-min-1)+1+min);
 
         Collections.sort(res);
-        print (res);
+        //print (res);
 
         return res;
 
+    }
+
+    static List<Integer> generateZipf (long seed, int num, int min, int max, double skew) {
+        ZipfGenerator zipf = new ZipfGenerator((max-min+1), skew, seed);
+        List<Integer> res = new ArrayList<Integer>();
+        for (int i=0; i<num; ++i)
+            res.add(zipf.nextInt()+min);
+
+        Collections.sort(res);
+        //print (res);
+
+        return res;
     }
 
     static void print (List<Integer> res) {
@@ -49,4 +61,47 @@ public class QueryGenerator {
     }
 
 
+
+}
+
+class ZipfGenerator {
+    private Random rnd;
+    private int size;
+    private double skew;
+    private double bottom = 0;
+
+    public ZipfGenerator(int size, double skew, long seed) {
+        this.size = size;
+        this.skew = skew;
+        this.rnd = new Random(seed);
+
+        for(int i=1;i < size; i++) {
+            this.bottom += (1/Math.pow(i, this.skew));
+        }
+    }
+
+    // the next() method returns an random rank id.
+    // The frequency of returned rank ids are follows Zipf distribution.
+    public int nextInt() {
+        int rank;
+        double frequency = 0;
+        double dice;
+
+        rank = rnd.nextInt(size);
+        frequency = (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+        dice = rnd.nextDouble();
+
+        while(!(dice < frequency)) {
+            rank = rnd.nextInt(size);
+            frequency = (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+            dice = rnd.nextDouble();
+        }
+
+        return rank;
+    }
+
+    // This method returns a probability that the given rank occurs.
+    public double getProbability(int rank) {
+        return (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+    }
 }

@@ -1,9 +1,11 @@
 package storm.blueprint;
 
+import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import storm.blueprint.buffer.ColdBuffer;
 import storm.blueprint.buffer.LibreBuffer;
 import storm.blueprint.buffer.WindowResultCallback;
+import storm.blueprint.function.Functional;
 import storm.blueprint.util.ListMap;
 
 import java.io.Serializable;
@@ -19,7 +21,7 @@ import java.util.Map;
  */
 public class ColdBufferBuilder implements Serializable {
 
-    private class ColdComponent {
+    private class ColdComponent implements Serializable{
         UseLink part;
         int suppressCount;
         int transferCount;
@@ -60,8 +62,10 @@ public class ColdBufferBuilder implements Serializable {
         return components;
     }
 
-    private List<ColdBuffer> buildColdBuffers (List<ColdComponent> allColdComponents, Map<String,
-            LibreBuffer> buffers) {
+    private List<ColdBuffer> buildColdBuffers (List<ColdComponent> allColdComponents,
+                                               Map<String, LibreBuffer> buffers,
+                                               Functional function,
+                                               Fields selectField) {
 
         ListMap<ResultDeclaration, ColdComponent> declarationGroup = new ListMap<ResultDeclaration, ColdComponent>(
                 allColdComponents, new ListMap.KeyExtractable<ResultDeclaration, ColdComponent>() {
@@ -79,6 +83,8 @@ public class ColdBufferBuilder implements Serializable {
             int start = declaration.start % declaration.pace;
             int size = start + declaration.length;
             ColdBuffer buffer = new ColdBuffer("__cold"+declaration.toString(), size, declaration.pace, start);
+            buffer.setFunction(function);
+            buffer.setSelectFields(selectField);
             coldBuffers.add(buffer);
 
             for (final ColdComponent component : components) {
@@ -110,7 +116,7 @@ public class ColdBufferBuilder implements Serializable {
                 });
 
                 // total times run
-                buffer.register(triggerCounter+1+cycle*(component.suppressCount+component.transferCount));
+                buffer.register(component.suppressCount+component.transferCount);
             }
 
         }
@@ -120,12 +126,15 @@ public class ColdBufferBuilder implements Serializable {
 
 
 
-    public List<ColdBuffer> build (Map<String, LibreBuffer> buffers, Collection<List<UseLink>> partitions) {
+    public List<ColdBuffer> build (Map<String, LibreBuffer> buffers,
+                                   Collection<List<UseLink>> partitions,
+                                   Functional function,
+                                   Fields selectField) {
         List<ColdComponent> allColdComponents = new ArrayList<ColdComponent>();
         for (List<UseLink> partition : partitions) {
             allColdComponents.addAll(getColdComponents(partition));
         }
 
-        return buildColdBuffers(allColdComponents, buffers);
+        return buildColdBuffers(allColdComponents, buffers, function, selectField);
     }
 }

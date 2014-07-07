@@ -8,11 +8,10 @@ import backtype.storm.tuple.Fields;
 import storm.blueprint.function.Max;
 import storm.blueprint.function.Sum;
 import storm.blueprint.util.Counter;
-import storm.blueprint.util.ResultWriter;
+import storm.blueprint.util.ListMap;
 import storm.blueprint.util.Timer;
 
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class AutoBoltTest {
 
@@ -79,7 +78,7 @@ public class AutoBoltTest {
                 .build();
     }
 
-    static AutoBolt setupRandomBolt(AutoBoltBuilder builder) {
+    static AutoBolt setupUniformBolt(AutoBoltBuilder builder) {
 
         final Counter counter = new Counter();
 
@@ -87,11 +86,18 @@ public class AutoBoltTest {
                 .setInputFields(new Fields("windspeed"))
                 .setOutputFields(new Fields("windspeed_sum"));
 
-        List<Integer> res = QueryGenerator.generate(5467, 100, 20, 1000);
-        Random rand = new Random();
+        int pace = 20;
+        List<Integer> res = QueryGenerator.generate(5467, 100, pace, 1000);
+
+
+        System.out.println("===========Generated queries==========");
+
         for (int r : res) {
-            builder.addWindow(r+"/20", r, 20);
+            builder.addWindow(r+"/"+pace, r, pace);
+            System.out.print(r+"/"+pace+"\t");
         }
+
+        System.out.println("\n===========End of generation==========");
 
         return builder.build().setTimer(new Timer(2000, 1000)
                 .addCallback(new Timer.TaskFinishedCallback() {
@@ -104,16 +110,71 @@ public class AutoBoltTest {
         }));
     }
 
+
+    static AutoBolt setupZipfBolt(AutoBoltBuilder builder) {
+
+        final Counter counter = new Counter();
+
+        builder.setFunction(new Sum().setCounter(counter))
+                .setInputFields(new Fields("windspeed"))
+                .setOutputFields(new Fields("windspeed_sum"));
+
+        long seed = 5467;
+
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 200, 2, 1000, 0.6);
+
+        // pace -> length
+        ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();
+
+        Random rand = new Random((long)(1.0*seed*3.14159));
+        for (int p : paces) {
+            double overlap = rand.nextDouble()*50.0 + 1;
+            int length = (int)(overlap * p);
+            builder.addWindow(length+"/"+p, length, p);
+            queries.put(p,length);
+        }
+
+        List<Integer> pacesList = new ArrayList<Integer>(queries.keySet());
+        Collections.sort(pacesList);
+
+
+        System.out.println("===========Generated queries==========");
+        for (int p : pacesList) {
+            Collections.sort(queries.get(p));
+            for (int length : queries.get(p)) {
+                System.out.print(length+"/"+p+"\t");
+            }
+        }
+        System.out.println("\n===========End of generation==========");
+
+        return builder.build().setTimer(new Timer(5000, 2000)
+                .addCallback(new Timer.TaskFinishedCallback() {
+                    @Override
+                    public void onTaskFinished() {
+                        System.out.println("Aggregation counts: " + counter.getCount());
+                        //ResultWriter.closeAll();
+                        counter.setCount(0);
+                    }
+                }));
+    }
+
     public static void main (String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
         //builder.setSpout("spout", new TestSpout(), 1);
         builder.setSpout("spout", new WindSpeedSpout(), 1);
 
-        builder.setBolt("pattern", setupRandomBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("libre", setupRandomBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("naive", setupRandomBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("super", setupRandomBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+        /*************** UNIFORM ***************/
+        //builder.setBolt("pattern", setupUniformBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("libre", setupUniformBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("naive", setupUniformBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("super", setupUniformBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+
+        /**************** ZIPF ****************/
+        //builder.setBolt("pattern", setupZipfBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("libre", setupZipfBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("naive", setupZipfBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("super", setupZipfBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();
