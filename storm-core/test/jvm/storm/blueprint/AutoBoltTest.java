@@ -87,7 +87,7 @@ public class AutoBoltTest {
                 .setOutputFields(new Fields("windspeed_sum"));
 
         int pace = 20;
-        List<Integer> res = QueryGenerator.generate(5467, 100, pace, 1000);
+        List<Integer> res = QueryGenerator.generate(5467, 200, pace, 1000);
 
 
         System.out.println("===========Generated queries==========");
@@ -99,7 +99,12 @@ public class AutoBoltTest {
 
         System.out.println("\n===========End of generation==========");
 
-        return builder.build().setTimer(new Timer(2000, 1000)
+        AutoBolt bolt = builder.build();
+        if (builder.cells > 0) {
+            System.out.println(builder.cells + " cells in total.");
+        }
+
+        return bolt.setTimer(new Timer(10000, 2000)
                 .addCallback(new Timer.TaskFinishedCallback() {
             @Override
             public void onTaskFinished() {
@@ -121,7 +126,7 @@ public class AutoBoltTest {
 
         long seed = 5467;
 
-        List<Integer> paces = QueryGenerator.generateZipf(seed, 200, 2, 1000, 0.6);
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 500, 0.6);
 
         // pace -> length
         ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();
@@ -147,7 +152,15 @@ public class AutoBoltTest {
         }
         System.out.println("\n===========End of generation==========");
 
-        return builder.build().setTimer(new Timer(5000, 2000)
+
+        AutoBolt bolt = builder.build();
+
+        if (builder.cells > 0) {
+            System.out.println(builder.cells + " cells in total.");
+        }
+
+
+        return bolt.setTimer(new Timer(30000, 20000)
                 .addCallback(new Timer.TaskFinishedCallback() {
                     @Override
                     public void onTaskFinished() {
@@ -183,7 +196,7 @@ public class AutoBoltTest {
         ILocalCluster cluster = new LocalCluster();
         cluster.submitTopology("windspeed", conf, builder.createTopology());
 
-        Thread.sleep(180000);
+        Thread.sleep(200000);
 
         cluster.shutdown();
 

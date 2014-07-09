@@ -41,7 +41,7 @@ public class AutoBolt extends BaseBasicBolt {
 
     IEntrance entrance;
 
-    Timer timer;// = new Timer(10000,1000);
+    Timer timer;
 
     AutoBolt setTimer (Timer timer) {
         this.timer = timer;

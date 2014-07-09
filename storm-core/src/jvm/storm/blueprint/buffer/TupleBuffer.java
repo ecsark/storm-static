@@ -51,4 +51,5 @@ public abstract class TupleBuffer implements Serializable {
     public boolean isEmitting() {
         return emitting;
     }
+
 }

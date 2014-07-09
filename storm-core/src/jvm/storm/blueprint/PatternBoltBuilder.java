@@ -81,8 +81,12 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
             secondPartSize += 1;
         }
 
-        clientPartSize.add(firstPartSize);
-        clientPartSize.add(secondPartSize);
+        if (firstPartSize != 0)
+            clientPartSize.add(firstPartSize);
+        if (secondPartSize != 0)
+            clientPartSize.add(secondPartSize);
+
+
 
         return clientPartSize;
     }

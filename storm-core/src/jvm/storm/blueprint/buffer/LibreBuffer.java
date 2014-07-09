@@ -69,7 +69,9 @@ public class LibreBuffer extends TupleBuffer {
 
     }
 
-
+    public List<Integer> getAncestorStates () {
+        return ancestorStates;
+    }
 
     public void setAncestorStates (List<Integer> ancestorStates) {
         this.ancestorStates = ancestorStates;
@@ -113,11 +115,11 @@ public class LibreBuffer extends TupleBuffer {
                 windIndex = (windIndex + 1) % layers;
             }
 
-            /*
+/*
             if (nextComponent[windIndex] != destComponent) {//TODO: remove this line
                 throw new RuntimeException("invalid");
-            }*/
-
+            }
+*/
             tuples[windIndex][destComponent] = tuple;
             nextComponent[windIndex]++;
 

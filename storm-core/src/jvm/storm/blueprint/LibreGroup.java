@@ -242,9 +242,17 @@ class UseLink implements Serializable {
         this.pace = pace;
     }
 
+    UseLink (String dest, ResultDeclaration component, int start, int pace, int index) {
+        this.dest = dest;
+        this.component = component;
+        this.start = start;
+        this.pace = pace;
+        this.index = index;
+    }
+
     @Override
     public String toString() {
-        return "["+ component.toString()+"]->"+dest+" @ "+Integer.toString(start)+" / "+Integer.toString(pace);
+        return "["+ component.toString()+"]->\""+dest+"\" @ "+Integer.toString(start)+"|"+Integer.toString(pace);
     }
 }
 
@@ -263,7 +271,7 @@ class ResultDeclaration implements Serializable {
 
     @Override
     public String toString() {
-        return windowId+": ("+Integer.toString(start)+","
-                +Integer.toString(length)+")/"+Integer.toString(pace);
+        return "\""+windowId+"\" @ "+Integer.toString(start)+"~"
+                +Integer.toString(length)+"|"+Integer.toString(pace);
     }
 }

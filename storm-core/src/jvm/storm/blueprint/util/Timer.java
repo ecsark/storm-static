@@ -51,6 +51,7 @@ public class Timer implements Serializable{
             startTimeCPU = bean.getThreadCpuTime(threadId);
             System.out.println("Start time:"+startTime);
             firstRun = false;
+            Counter.setRun(true);
         }
     }
 

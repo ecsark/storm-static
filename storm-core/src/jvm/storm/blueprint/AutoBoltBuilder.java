@@ -26,6 +26,8 @@ public abstract class AutoBoltBuilder implements Serializable {
 
     transient Random rand;
 
+    transient int cells = 0;
+
     public AutoBoltBuilder() {
         windowNames = new HashSet<String>();
         bolt = new AutoBolt();
@@ -61,5 +63,9 @@ public abstract class AutoBoltBuilder implements Serializable {
         windowNames.add(windowName);
 
         return windowName;
+    }
+
+    public int getTotalCells () {
+        return cells;
     }
 }

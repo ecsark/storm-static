@@ -12,7 +12,8 @@ public class Counter implements Serializable {
     long counter = 0;
 
     public void increment (int num) {
-        counter += num;
+        if (running)
+            counter += num;
     }
 
     public long getCount () {
@@ -21,5 +22,12 @@ public class Counter implements Serializable {
 
     public void setCount (long counter) {
         this.counter = counter;
+    }
+
+
+    static boolean running = false;
+
+    public static void setRun (boolean isRunnable)  {
+        running = isRunnable;
     }
 }

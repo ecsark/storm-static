@@ -16,7 +16,6 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
 
     transient List<LibreBuffer> entrances;
 
-
     public LibreBoltBuilder() {
         super();
         windows = new TreeMap<Integer, LibreGroup>(Collections.reverseOrder());
@@ -69,10 +68,17 @@ public class LibreBoltBuilder extends AutoBoltBuilder {
         buffers.clear();
         entrances = new ArrayList<LibreBuffer>();
 
+
+        cells = 0;
+
         for (LibreGroup libreGroup : windows.values()) {
 
             Collection<LibreBuffer> newBuffers = bufferBuilder.build(libreGroup.links, libreGroup.windows, function,
                     inputFields, bolt);
+
+
+            for (LibreBuffer buf : newBuffers)
+                cells += buf.getSize();
 
             buffers.addAll(newBuffers);
             Collections.sort(buffers, new Comparator<TupleBuffer>() {

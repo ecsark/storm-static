@@ -50,7 +50,7 @@ public class TestSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        Utils.sleep(300);
+        Utils.sleep(100);
         value -= _rand.nextDouble()*2;
         _collector.emit(new Values(value));
     }

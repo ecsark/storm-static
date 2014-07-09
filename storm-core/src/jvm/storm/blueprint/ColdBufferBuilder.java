@@ -10,7 +10,6 @@ import storm.blueprint.util.ListMap;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -21,92 +20,118 @@ import java.util.Map;
  */
 public class ColdBufferBuilder implements Serializable {
 
-    private class ColdComponent implements Serializable{
-        UseLink part;
-        int suppressCount;
-        int transferCount;
+    private class ColdLink implements Serializable{
+        UseLink use;
+        int transfers;
+        int trigger;
+        int destIndex;
 
-        ColdComponent(UseLink part, int suppressCount, int transferCount) {
-            this.part = part;
-            this.suppressCount = suppressCount;
-            this.transferCount = transferCount;
+        ColdLink(UseLink use, int transfers, int trigger, int destIndex) {
+            this.use = use;
+            this.transfers = transfers;
+            this.trigger = trigger;
+            this.destIndex = destIndex;
         }
     }
 
 
-    private List<ColdComponent> getColdComponents (List<UseLink> partition) {
-        List<ColdComponent> components = new ArrayList<ColdComponent>();
+    private List<ColdLink> computeColdLinks(List<UseLink> partition, List<Integer> ancestorStates) {
 
-        for (UseLink part : partition) {
-            int transferCount = 0, suppressCount = 0;
+        int pace = partition.get(0).pace;
 
-            int start = part.start;
-            while (start >= 0) {
-                if (start < part.component.start)
-                    transferCount++;
-                else
-                    suppressCount++;
-                start -= part.pace;
+        List<ColdLink> coldLinks = new ArrayList<ColdLink>();
+
+        int ancestorLayers = ancestorStates.size();
+        if (ancestorLayers == 0)
+            return coldLinks;
+
+        List<Integer> ends = new ArrayList<Integer>(partition.size());
+        for (UseLink link : partition)
+            ends.add(link.component.length);
+        for (int i=1; i<partition.size(); ++i)
+            ends.set(i, ends.get(i)+ends.get(i-1));
+
+        int progress = ancestorStates.get(ancestorStates.size()-1) + 1;
+        for (int ancestorIndex=0; ancestorIndex<ancestorStates.size(); ++ancestorIndex) {
+
+            for (int partIndex=ancestorStates.get(ancestorIndex); partIndex<progress; ++partIndex) {
+                ResultDeclaration part =  partition.get(partIndex).component;
+                int receiverEnd = ends.get(partIndex) - (ancestorLayers-ancestorIndex)*pace;
+                int senderEnd = part.start + part.length;
+
+                if (receiverEnd < senderEnd) { // cold start
+                    int receiverStart = receiverEnd - part.length;
+                    int newSenderStart = part.start % part.pace;
+                    int trigger = (receiverStart - newSenderStart) / part.pace;
+
+                    int transfers = 0;
+                    while (ancestorIndex+1 < ancestorStates.size() && receiverEnd<senderEnd) {
+                        transfers++;
+                        receiverEnd += pace;
+                    }
+
+                    coldLinks.add(new ColdLink(partition.get(partIndex), transfers, trigger, partIndex));
+                }
             }
 
-            start = part.start + part.pace;
-            while (start < part.component.start) {
-                transferCount++;
-                start += part.pace;
-            }
-
-            if (transferCount > 0)
-                components.add(new ColdComponent(part, suppressCount, transferCount));
+            progress = ancestorStates.get(ancestorIndex);
         }
 
-        return components;
+        return coldLinks;
     }
 
-    private List<ColdBuffer> buildColdBuffers (List<ColdComponent> allColdComponents,
-                                               Map<String, LibreBuffer> buffers,
-                                               Functional function,
-                                               Fields selectField) {
 
-        ListMap<ResultDeclaration, ColdComponent> declarationGroup = new ListMap<ResultDeclaration, ColdComponent>(
-                allColdComponents, new ListMap.KeyExtractable<ResultDeclaration, ColdComponent>() {
+    public List<ColdBuffer> build (Map<String, LibreBuffer> buffers,
+                                   Map<String, List<UseLink>> partitions,
+                                   Functional function,
+                                   Fields selectField) {
+
+        List<ColdLink> allColdLinks = new ArrayList<ColdLink>();
+
+        for (String id : buffers.keySet())
+            allColdLinks.addAll(computeColdLinks(partitions.get(id), buffers.get(id).getAncestorStates()));
+
+        ListMap<ResultDeclaration, ColdLink> decMap = new ListMap<ResultDeclaration, ColdLink>(
+                allColdLinks, new ListMap.KeyExtractable<ResultDeclaration, ColdLink>() {
             @Override
-            public ResultDeclaration getKey(ColdComponent item) {
-                return item.part.component;
+            public ResultDeclaration getKey(ColdLink item) {
+                return item.use.component;
             }
         });
 
         List<ColdBuffer> coldBuffers = new ArrayList<ColdBuffer>();
 
-        for (List<ColdComponent> components : declarationGroup.getMap().values()) {
-            ResultDeclaration declaration = components.get(0).part.component;
+        for (List<ColdLink> components : decMap.getMap().values()) {
+            ResultDeclaration declaration = components.get(0).use.component;
 
             int start = declaration.start % declaration.pace;
             int size = start + declaration.length;
+
             ColdBuffer buffer = new ColdBuffer("__cold"+declaration.toString(), size, declaration.pace, start);
             buffer.setFunction(function);
             buffer.setSelectFields(selectField);
             coldBuffers.add(buffer);
 
-            for (final ColdComponent component : components) {
+            for (final ColdLink component : components) {
 
-                final LibreBuffer buf = buffers.get(component.part.dest);
-                List<UseLink> link = new ArrayList<UseLink>();
-                link.add(component.part);
-                Map<Integer, List<Integer>> counterMap =  LibreBufferBuilder.computeForwardingPattern(link);
-                final int triggerCounter = counterMap.keySet().iterator().next(); // get first key
-                final List<Integer> destComponentIndices = counterMap.values().iterator().next(); // get first value
-                final int cycle = component.part.pace / component.part.component.pace;
+                UseLink link = component.use;
+
+                final int trigger = component.trigger;
+                final int cycle = link.pace / link.component.pace;
+                final int transfers = component.transfers;
+                final List<Integer> destComponentIndices = new ArrayList<Integer>();
+                destComponentIndices.add(component.destIndex);
+
+                final LibreBuffer buf = buffers.get(link.dest);
 
                 buffer.addCallback(new WindowResultCallback() {
 
-                    int suppressCount = component.suppressCount;
-                    int transferCount = component.transferCount;
                     int count = 0, step = 0;
 
                     @Override
                     public void process(Tuple tuple) {
-                        if  (count >= suppressCount && count < transferCount+suppressCount) {
-                            if (step == triggerCounter) {
+                        if  (count < transfers) {
+                            if (step == trigger) {
                                 buf.put(tuple, destComponentIndices);
                                 count++;
                             }
@@ -115,26 +140,11 @@ public class ColdBufferBuilder implements Serializable {
                     }
                 });
 
-                // total times run
-                buffer.register(component.suppressCount+component.transferCount);
+                // minimum partial aggregate counts for the coldBuffer
+                buffer.register((transfers-1)*cycle + trigger + 1);
             }
-
         }
 
         return coldBuffers;
-    }
-
-
-
-    public List<ColdBuffer> build (Map<String, LibreBuffer> buffers,
-                                   Collection<List<UseLink>> partitions,
-                                   Functional function,
-                                   Fields selectField) {
-        List<ColdComponent> allColdComponents = new ArrayList<ColdComponent>();
-        for (List<UseLink> partition : partitions) {
-            allColdComponents.addAll(getColdComponents(partition));
-        }
-
-        return buildColdBuffers(allColdComponents, buffers, function, selectField);
     }
 }

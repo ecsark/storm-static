@@ -95,13 +95,13 @@ public class LibreBufferBuilder implements Serializable {
                     for (Map.Entry<Integer, List<Integer>> counterEntry : counterMap.entrySet()) {
 
                         final List<Integer> destComponentIndices = counterEntry.getValue();
-                        final int triggerCounter = counterEntry.getKey();
+                        final int trigger = counterEntry.getKey();
 
                         callbacks.add(new WindowResultCallback() {
                             int step = 0;
                             @Override
                             public void process(Tuple tuple) {
-                                if (step == triggerCounter)
+                                if (step == trigger)
                                     buf.put(tuple, destComponentIndices);
                                 step = (step +1) % cycle;
                             }
@@ -287,15 +287,9 @@ public class LibreBufferBuilder implements Serializable {
 
     protected List<Integer> computeAncestorStates(List<UseLink> partition, int pace, int windowLength) {
 
-
         int nAncestor = (windowLength-1) / pace;
 
         List<Integer> states = new ArrayList<Integer>(nAncestor);
-        // pre-stuffing!
-        for (int i=0; i<nAncestor; ++i) {
-            states.add(0);
-        }
-
         int length = 0;
 
         for (int i=1, j=0; i<=nAncestor; ++i) {
@@ -304,32 +298,34 @@ public class LibreBufferBuilder implements Serializable {
                 length += partition.get(j).component.length;
                 ++j;
             }
-            states.set(nAncestor-i, j);
+            states.add(j);
         }
 
-        return states;
+        int nPartitions = partition.size();
+        List<Integer> statesReversed = new ArrayList<Integer>();
+        for (int i=states.size()-1; i>=0 ; --i) {
+            if (states.get(i)!=nPartitions)
+                statesReversed.add(states.get(i));
+        }
+
+        return statesReversed;
     }
 
 
     // <triggerCounter, List<destComponentIds>>
-    protected static Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
+    protected Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
 
         if (links.size() == 0) {
             return new HashMap<Integer, List<Integer>>();
         }
 
-        List<Integer> counters = new ArrayList<Integer>();
-        for (UseLink link : links) {
-            int counter = link.start/link.component.pace;
-            counters.add(counter);
-        }
         // see if there is coincidence
         final int rotation = links.get(0).pace/links.get(0).component.pace; // there should be at least one element!!
         ListMap<Integer, UseLink> counterMap = new ListMap<Integer, UseLink>(links,
             new ListMap.KeyExtractable<Integer, UseLink>() {
                 @Override
                 public Integer getKey(UseLink item) {
-                    return (item.start/item.component.pace) % rotation;
+                    return ((item.start-item.component.start)%item.pace)/item.component.pace;
                 }
             });
 

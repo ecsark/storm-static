@@ -288,6 +288,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
         LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
         Collection<LibreBuffer> newBuffers = bufferBuilder.build(Registry.getLinks(), allWindows, function,
                 inputFields, bolt);
+        buffers.clear();
         buffers.addAll(newBuffers);
 
         // set entrance buffer
@@ -297,11 +298,15 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
                 entranceBuffers.add(buf);
         }
 
+        cells = 0;
+        for (LibreBuffer buf : newBuffers)
+            cells += buf.getSize();
+
         LibreEntranceBuffer entranceBuffer = new LibreEntranceBuffer(entranceBuffers);
 
         // build coldBuffer!
         List<ColdBuffer> coldBuffers = new ColdBufferBuilder().build(bufferBuilder.buffers,
-                bufferBuilder.partitions.values(), function, inputFields);
+                bufferBuilder.partitions, function, inputFields);
 
         for (ColdBuffer buf : coldBuffers) {
             entranceBuffer.addColdBuffer(buf);
