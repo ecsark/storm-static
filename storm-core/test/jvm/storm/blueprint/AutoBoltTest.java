@@ -126,7 +126,7 @@ public class AutoBoltTest {
 
         long seed = 5467;
 
-        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 500, 0.6);
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 500, 0.6); //seed, num, min, max, skew
 
         // pace -> length
         ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();
@@ -142,6 +142,10 @@ public class AutoBoltTest {
         List<Integer> pacesList = new ArrayList<Integer>(queries.keySet());
         Collections.sort(pacesList);
 
+        Set<Integer> paceSet = new TreeSet<Integer>(pacesList);
+        for (int p : paceSet)
+            System.out.print(p+"\t");
+        System.out.println("--------------------------------------");
 
         System.out.println("===========Generated queries==========");
         for (int p : pacesList) {

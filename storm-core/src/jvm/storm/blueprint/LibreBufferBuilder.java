@@ -30,16 +30,27 @@ public class LibreBufferBuilder implements Serializable {
                                           final AutoBolt bolt) {
 
         Map<String, List<ResultDependency>> dependencies = resolveDependencies(links);
+
+        Set<String> nonEmittingWindows = new HashSet<String>();
+        for (WindowItem window : windows) {
+            if (!window.isEmitting())
+                nonEmittingWindows.add(window.id);
+        }
+
+        Set<String> redundantWindowIds = removeRedundantDependencies(dependencies, nonEmittingWindows, links);
+
         extractPartition(links);
 
         buffers = new HashMap<String, LibreBuffer>();
 
         for (WindowItem window : windows) {
 
-            LibreBuffer buffer;
+            if (redundantWindowIds.contains(window.id))
+                continue;
 
             List<UseLink> partition = partitions.get(window.id);
-            buffer = new LibreBuffer(window.id, partition.size(),
+
+            LibreBuffer buffer = new LibreBuffer(window.id, partition.size(),
                     computeLayerNum(window, partition), window.pace, window.length);
 
             buffer.setAncestorStates(computeAncestorStates(partition, window.pace, window.length));
@@ -47,6 +58,7 @@ public class LibreBufferBuilder implements Serializable {
             buffer.setSelectFields(selectField);
             buffers.put(window.id, buffer);
         }
+
 
         // for each buffer
         for (final LibreBuffer buffer : buffers.values()) {
@@ -211,6 +223,89 @@ public class LibreBufferBuilder implements Serializable {
     }
 
 
+    /*
+     * @return Redundant window IDs
+     */
+    private Set<String> removeRedundantDependencies (Map<String, List<ResultDependency>> dependencies,
+                                              Set<String> nonEmittingWindows, List<UseLink> allLinks) {
+
+
+        Set<String> allRemovedWindows = new HashSet<String>();
+
+        Set<String> unusedWindows = new HashSet<String>();
+        for (String windowId : nonEmittingWindows) {
+            if (!dependencies.containsKey(windowId))
+                unusedWindows.add(windowId);
+        }
+        allRemovedWindows.addAll(unusedWindows);
+
+        while (unusedWindows.size() > 0) {
+
+            Set<String> windowsToRemove = new HashSet<String>();
+
+            for (String windowId : dependencies.keySet()) {
+
+                List<ResultDependency> dependencyList = dependencies.get(windowId);
+
+                Iterator<ResultDependency> depIter = dependencyList.iterator();
+                while (depIter.hasNext()) {
+
+                    ResultDependency dependency = depIter.next();
+
+                    Iterator<UseLink> linkIter = dependency.dependents.iterator();
+                    while (linkIter.hasNext()) {
+                        UseLink link = linkIter.next();
+                        if (unusedWindows.contains(link.dest))
+                            linkIter.remove();
+                    }
+
+                    if (dependency.dependents.size() == 0)
+                        depIter.remove();
+                }
+
+                if (dependencyList.size() == 0 && nonEmittingWindows.contains(windowId))
+                    windowsToRemove.add(windowId);
+            }
+
+            for (String windowId : windowsToRemove)
+                dependencies.remove(windowId);
+
+            allRemovedWindows.addAll(windowsToRemove);
+
+            unusedWindows = windowsToRemove;
+        }
+
+        Iterator<UseLink> linkIter = allLinks.iterator();
+        while(linkIter.hasNext()) {
+            UseLink link = linkIter.next();
+            if (allRemovedWindows.contains(link.component.windowId)
+                    || allRemovedWindows.contains(link.dest))
+                linkIter.remove();
+        }
+
+
+        /*
+        List<String> remainedWindows = new ArrayList<String>();
+        for (String wind : nonEmittingWindows) {
+            if (!allRemovedWindows.contains(wind))
+                remainedWindows.add(wind);
+        }
+
+        Collections.sort(remainedWindows, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                if (o1.length() == o2.length()) {
+                    return o1.substring(9).compareTo(o2.substring(9));
+                }
+                return o1.length() - o2.length();
+            }
+        });
+        */
+
+        return allRemovedWindows;
+    }
+
+
     private List<Integer> quickList (int from, int to) {
         List<Integer> list = new ArrayList<Integer>();
         for (int i=from; i<=to; ++i) {
@@ -368,7 +463,6 @@ public class LibreBufferBuilder implements Serializable {
 
 
         boolean addTarget (UseLink dependent) {
-            assert(dependent.component ==declaration); // TODO: remove this line
             if (dependent.component !=declaration)
                 return false;
             dependents.add(dependent);

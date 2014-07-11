@@ -192,6 +192,12 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
     }
 
+
+    /*
+     * TODO:
+     *  ?? use parts from a window with larger pace when possible
+     */
+
     @Override
     public AutoBolt build() {
         Map<Integer, List<Integer>> topology = makeTopology();

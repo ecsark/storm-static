@@ -109,6 +109,7 @@ public class ColdBufferBuilder implements Serializable {
 
             ColdBuffer buffer = new ColdBuffer("__cold"+declaration.toString(), size, declaration.pace, start);
             buffer.setFunction(function);
+            buffer.setEmitting(false);
             buffer.setSelectFields(selectField);
             coldBuffers.add(buffer);
 

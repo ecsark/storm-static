@@ -50,11 +50,7 @@ public class DelegateBuffer extends TupleBuffer {
 
     public void put (Tuple tuple) {
 
-        try {
-            tuples[currentStep] = tuple;
-        } catch (Exception e) {
-            int a = 10;
-        }
+        tuples[currentStep] = tuple;
 
         ++currentStep;
 
