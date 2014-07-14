@@ -126,7 +126,7 @@ public class AutoBoltTest {
 
         long seed = 5467;
 
-        List<Integer> paces = QueryGenerator.generateZipf(seed, 100, 2, 100, 0.6); //seed, num, min, max, skew
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 100, 0.6); //seed, num, min, max, skew
 
         // pace -> length
         ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();
@@ -195,8 +195,8 @@ public class AutoBoltTest {
         //builder.setBolt("pattern", setupZipfBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("libre", setupZipfBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("naive", setupZipfBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
-        //builder.setBolt("super", setupZipfBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("weave", setupZipfBolt(new WeaveBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("super", setupZipfBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("weave", setupZipfBolt(new WeaveBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();

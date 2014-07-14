@@ -83,7 +83,7 @@ public class Registry {
                 if (reg.get(p).containsKey(start%p)) {
                     for (ResultDeclaration d : reg.get(p).get(start%p)) {
                         if (d.length <= max) { // unit will not be used!!
-                            if (!allowUnit && d.windowId.startsWith("__unit"))
+                            if (!allowUnit && d.windowId.startsWith("UNIT"))
                                 continue;
                             results.add(d);
 

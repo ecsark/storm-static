@@ -138,7 +138,9 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
         List<Integer> r = new ArrayList<Integer>(groups.get(pace));
         Collections.sort(r);
 
-        boolean isEntrance = id.startsWith("__entrance");
+        //TODO
+        //boolean isEntrance = id.startsWith("__entrance");
+        boolean isEntrance = true;
 
         int start = 0;
         for (int i=1; i<r.size(); ++i) {
@@ -164,7 +166,8 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
         int start = 0;
         List<Integer> parts = new ArrayList<Integer>();
         while (start < w.length) {
-            ResultDeclaration declaration = Registry.getLongest(Registry.find(w.pace, start, w.length-start));
+            ResultDeclaration declaration = Registry.getLongest(Registry.find(w.pace, start, w.length-start,
+                    true)); // TODO
             Registry.reuse(new UseLink(w.id, declaration, start, w.pace));
             start += declaration.length;
             parts.add(start);
@@ -220,7 +223,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
                 Set<Integer> remainders = groups.get(pace);
                 for (int receiver : topology.get(pace)) {
                     for (int rem : groups.get(receiver))
-                        remainders.add(rem % pace);
+                        ;//remainders.add(rem % pace);
 
                 }
             }
@@ -251,8 +254,9 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             }
         }
 
-        Registry.declare(new ResultDeclaration(1,0,1,"__unit__"));
 
+        Registry.declare(new ResultDeclaration(1,0,1,"UNIT"));
+        Registry.reuse(new UseLink("UNIT", new ResultDeclaration(1,0,1,"__raw__"), 0, 1));
         // build delegates
         for (int pace : paces) {
             if (entrances.contains(pace))
@@ -281,7 +285,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
         // make delegate WindowItem
         for (int pace : groups.keysSet()) {
-            WindowItem delegateWindow = null;
+            WindowItem delegateWindow;
             if (entrances.contains(pace))
                 delegateWindow = new WindowItem("__entrance"+pace+"__", pace, pace);
             else
@@ -289,6 +293,10 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             delegateWindow.setEmitting(false);
             allWindows.add(delegateWindow);
         }
+
+
+        allWindows.add(new WindowItem("UNIT", 1, 1));
+
 
         // build buffer!
         LibreBufferBuilder bufferBuilder = new LibreBufferBuilder();
@@ -299,8 +307,10 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
         // set entrance buffer
         List<LibreBuffer> entranceBuffers = new ArrayList<LibreBuffer>();
+
         for (LibreBuffer buf : newBuffers) {
-            if (buf.getId().startsWith("__entrance"))
+            //if (buf.getId().startsWith("__entrance"))
+            if (buf.getId().startsWith("UNIT"))
                 entranceBuffers.add(buf);
         }
 
