@@ -142,7 +142,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
         int start = 0;
         for (int i=1; i<r.size(); ++i) {
-            // construct
+            // construction
             while (start < r.get(i)) {
                 ResultDeclaration declaration = Registry.getLongest(Registry.find(pace, start, r.get(i)-start, isEntrance));
                 Registry.reuse(new UseLink(id, declaration, start, pace));
@@ -160,7 +160,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
     private void buildWindow (WindowItem w) {
 
-        // construct
+        // construction
         int start = 0;
         List<Integer> parts = new ArrayList<Integer>();
         while (start < w.length) {
@@ -170,7 +170,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             parts.add(start);
         }
 
-        // declare
+        // declaration
         int lastStop = 0;
         for (int stop=0; stop<parts.size(); ++stop) {
             if (parts.get(stop)%w.pace == 0) {

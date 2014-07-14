@@ -3,7 +3,7 @@ package storm.blueprint;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import storm.blueprint.buffer.DelegateBuffer;
-import storm.blueprint.buffer.FullWindowBuffer;
+import storm.blueprint.buffer.FullBuffer;
 import storm.blueprint.buffer.IEntrance;
 import storm.blueprint.buffer.WindowResultCallback;
 
@@ -113,7 +113,7 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
                 size += 1;
 
             // TODO: modify to accommodate more buffer types
-            final FullWindowBuffer windowBuffer = new FullWindowBuffer(endClient.id, size, 2, endClient.length);
+            final FullBuffer windowBuffer = new FullBuffer(endClient.id, size, 2, endClient.length);
             windowBuffer.setSelectFields(inputFields);
             windowBuffer.setFunction(function);
             buffers.add(windowBuffer);

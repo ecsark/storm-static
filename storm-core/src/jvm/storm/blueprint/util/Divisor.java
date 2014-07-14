@@ -83,4 +83,33 @@ public class Divisor implements Serializable {
 
         return gcd.intValue();
     }
+
+    public static long getLeastCommonMultiple(long a, long b) {
+        long r = a, s = a, t = b;
+        if (a < b) {
+            r = a;
+            a = b;
+            b = r;
+        }
+        while (r != 0) {
+            r = a % b;
+            a = b;
+            b = r;
+        }
+        return s * t / a;
+    }
+
+
+    public static long getLeastCommonMultiple (List<Integer> data) {
+        if (data.size() < 1) {
+            throw new IllegalArgumentException("Input size should be greater than 0!");
+        }
+
+        long lcm = data.get(0);
+        for (int i=1; i<data.size(); ++i) {
+            lcm = getLeastCommonMultiple(lcm, data.get(i));
+        }
+
+        return lcm;
+    }
 }

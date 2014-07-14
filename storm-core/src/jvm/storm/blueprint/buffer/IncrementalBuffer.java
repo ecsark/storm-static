@@ -12,7 +12,7 @@ import java.util.List;
  * Date: 4/21/14
  * Time: 11:32 AM
  */
-public class IncrementalWindowBuffer extends TupleBuffer implements IEntrance {
+public class IncrementalBuffer extends TupleBuffer implements IEntrance {
 
     private List<WindowResultCallback> callbacks;
 
@@ -25,7 +25,7 @@ public class IncrementalWindowBuffer extends TupleBuffer implements IEntrance {
     private Incremental func;
     private Values state;
 
-    public IncrementalWindowBuffer(String id, int size, int pace, int length) {
+    public IncrementalBuffer(String id, int size, int pace, int length) {
         this.pace = pace;
         this.id = id;
         this.size = size;

@@ -87,7 +87,7 @@ public class AutoBoltTest {
                 .setOutputFields(new Fields("windspeed_sum"));
 
         int pace = 20;
-        List<Integer> res = QueryGenerator.generate(5467, 200, pace, 1000);
+        List<Integer> res = QueryGenerator.generate(5467, 200, pace, 1000); // seed, num, min, max
 
 
         System.out.println("===========Generated queries==========");
@@ -126,7 +126,7 @@ public class AutoBoltTest {
 
         long seed = 5467;
 
-        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 500, 0.6); //seed, num, min, max, skew
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 100, 2, 100, 0.6); //seed, num, min, max, skew
 
         // pace -> length
         ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();
@@ -181,17 +181,22 @@ public class AutoBoltTest {
         //builder.setSpout("spout", new TestSpout(), 1);
         builder.setSpout("spout", new WindSpeedSpout(), 1);
 
+
+        //builder.setBolt("weave", setupBolt1(new WeaveBoltBuilder()), 1).shuffleGrouping("spout");
+
         /*************** UNIFORM ***************/
         //builder.setBolt("pattern", setupUniformBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("libre", setupUniformBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("naive", setupUniformBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("super", setupUniformBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("weave", setupUniformBolt(new WeaveBoltBuilder()), 1).shuffleGrouping("spout");
 
         /**************** ZIPF ****************/
         //builder.setBolt("pattern", setupZipfBolt(new PatternBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("libre", setupZipfBolt(new LibreBoltBuilder()), 1).shuffleGrouping("spout");
         //builder.setBolt("naive", setupZipfBolt(new NaiveBoltBuilder()), 1).shuffleGrouping("spout");
-        builder.setBolt("super", setupZipfBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+        //builder.setBolt("super", setupZipfBolt(new SuperBoltBuilder()), 1).shuffleGrouping("spout");
+        builder.setBolt("weave", setupZipfBolt(new WeaveBoltBuilder()), 1).shuffleGrouping("spout");
 
 
         Config conf = new Config();

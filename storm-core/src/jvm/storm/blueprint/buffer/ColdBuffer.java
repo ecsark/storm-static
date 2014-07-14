@@ -11,7 +11,7 @@ import java.util.List;
  * Date: 7/7/14
  * Time: 1:51 PM
  */
-public class ColdBuffer extends FullWindowBuffer implements IEntrance {
+public class ColdBuffer extends FullBuffer implements IEntrance {
 
     int start;
     int counter = 0;

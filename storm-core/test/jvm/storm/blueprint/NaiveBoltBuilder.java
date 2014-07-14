@@ -2,7 +2,7 @@ package storm.blueprint;
 
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
-import storm.blueprint.buffer.FullWindowBuffer;
+import storm.blueprint.buffer.FullBuffer;
 import storm.blueprint.buffer.IEntrance;
 import storm.blueprint.buffer.TupleBuffer;
 import storm.blueprint.buffer.WindowResultCallback;
@@ -17,7 +17,7 @@ public class NaiveBoltBuilder extends AutoBoltBuilder {
     @Override
     public AutoBoltBuilder addWindow(String id, int length, int pace) {
         final String windowName = uniqueWindowName(id);
-        final FullWindowBuffer buffer = new FullWindowBuffer(windowName, length, pace, length);
+        final FullBuffer buffer = new FullBuffer(windowName, length, pace, length);
         buffer.setSelectFields(inputFields);
         buffer.setFunction(function);
         buffer.addCallback(new WindowResultCallback() {

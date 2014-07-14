@@ -10,7 +10,7 @@ import java.util.List;
  * Date: 4/21/14
  * Time: 11:19 AM
  */
-public class FullWindowBuffer extends TupleBuffer implements IEntrance {
+public class FullBuffer extends TupleBuffer implements IEntrance {
 
     protected List<WindowResultCallback> callbacks;
 
@@ -20,7 +20,7 @@ public class FullWindowBuffer extends TupleBuffer implements IEntrance {
     protected int step;
 
 
-    public FullWindowBuffer(String id, int size, int pace, int length) {
+    public FullBuffer(String id, int size, int pace, int length) {
         this.pace = pace;
         this.id = id;
         this.size = size;
