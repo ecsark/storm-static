@@ -126,7 +126,7 @@ public class AutoBoltTest {
 
         long seed = 5467;
 
-        List<Integer> paces = QueryGenerator.generateZipf(seed, 500, 2, 100, 0.6); //seed, num, min, max, skew
+        List<Integer> paces = QueryGenerator.generateZipf(seed, 400, 2, 400, 0.6); //seed, num, min, max, skew
 
         // pace -> length
         ListMap<Integer, Integer> queries = new ListMap<Integer, Integer>();

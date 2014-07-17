@@ -66,7 +66,7 @@ public class LibreBufferBuilder implements Serializable {
             List<ResultDependency> dependencyList = dependencies.get(buffer.getId());
 
             // add final aggregation result declare
-            if (dependencyList!=null) {
+            if (dependencyList!=null && dependencyList.size()>0) {
                 ResultDependency lastResult = dependencyList.get(dependencyList.size() - 1);
                 if (lastResult.declaration.start + lastResult.declaration.length != buffer.getLength()) {
                     dependencyList.add(new ResultDependency(
@@ -285,24 +285,6 @@ public class LibreBufferBuilder implements Serializable {
                 linkIter.remove();
         }
 
-
-        /*
-        List<String> remainedWindows = new ArrayList<String>();
-        for (String wind : nonEmittingWindows) {
-            if (!allRemovedWindows.contains(wind))
-                remainedWindows.add(wind);
-        }
-
-        Collections.sort(remainedWindows, new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                if (o1.length() == o2.length()) {
-                    return o1.substring(9).compareTo(o2.substring(9));
-                }
-                return o1.length() - o2.length();
-            }
-        });
-        */
 
         return allRemovedWindows;
     }

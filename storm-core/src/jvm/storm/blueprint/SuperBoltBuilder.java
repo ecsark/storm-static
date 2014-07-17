@@ -263,8 +263,19 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
                 buildDelegate(pace, "__entrance"+pace+"__");
             else
                 buildDelegate(pace, "__delegate"+pace+"__");
+            if (windows.containsKey(pace)) {
+                List<WindowItem> winds = windows.get(pace);
+                Collections.sort(winds, new Comparator<WindowItem>() {
+                    @Override
+                    public int compare(WindowItem o1, WindowItem o2) {
+                        return o1.length - o2.length;
+                    }
+                });
+                for (WindowItem window : winds)
+                    buildWindow(window);
+            }
         }
-
+/*
         // build window in the ascending order of <pace, windowLength>
         List<Integer> queryPaces = new ArrayList<Integer>(windows.keySet());
         Collections.sort(queryPaces);
@@ -279,7 +290,7 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
             for (WindowItem window : winds)
                 buildWindow(window);
         }
-
+*/
         // build window buffer
         List<WindowItem> allWindows = windows.values();
 
@@ -327,6 +338,14 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
         for (ColdBuffer buf : coldBuffers) {
             entranceBuffer.addColdBuffer(buf);
         }
+
+
+        List<UseLink> links = new ArrayList<UseLink>();
+        for (UseLink link : Registry.getLinks()) {
+            if (link.dest.startsWith("__") && !link.component.windowId.startsWith("UNIT"))
+                links.add(link);
+        }
+
 
         bolt.setEntrance(entranceBuffer);
 
