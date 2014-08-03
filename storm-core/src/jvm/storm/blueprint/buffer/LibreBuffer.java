@@ -95,14 +95,14 @@ public class LibreBuffer extends TupleBuffer {
 
         for (int destComponent : destComponentIds) {
 
-            if (coldStart) {
+            if (coldStart && ancestorStates.size() > 0) {
                 while (coldIndex < ancestorStates.size()
                         && ancestorStates.get(coldIndex) > destComponent) {
                     ++coldIndex;
                 }
                 if (coldIndex < ancestorStates.size()) {
                     if (ancestorStates.get(coldIndex) != destComponent)
-                        throw new RuntimeException("invalid");
+                        throw new RuntimeException("invalid");//TODO: remove this line
                     if (destComponent == (size-1)) { // this window is finished!
                         ++coldNextResult;
                         if (coldNextResult >= ancestorStates.size())
@@ -119,11 +119,11 @@ public class LibreBuffer extends TupleBuffer {
                 windIndex = (windIndex + 1) % layers;
             }
 
-/*
+
             if (nextComponent[windIndex] != destComponent) {//TODO: remove this line
                 throw new RuntimeException("invalid");
             }
-*/
+
             tuples[windIndex][destComponent] = tuple;
             nextComponent[windIndex]++;
 

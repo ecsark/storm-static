@@ -41,41 +41,66 @@ public class ColdBufferBuilder implements Serializable {
 
         List<ColdLink> coldLinks = new ArrayList<ColdLink>();
 
-        int ancestorLayers = ancestorStates.size();
-        if (ancestorLayers == 0)
-            return coldLinks;
-
         List<Integer> ends = new ArrayList<Integer>(partition.size());
         for (UseLink link : partition)
             ends.add(link.component.length);
         for (int i=1; i<partition.size(); ++i)
             ends.set(i, ends.get(i)+ends.get(i-1));
 
-        int progress = ancestorStates.get(ancestorStates.size()-1) + 1;
-        for (int ancestorIndex=0; ancestorIndex<ancestorStates.size(); ++ancestorIndex) {
 
-            for (int partIndex=ancestorStates.get(ancestorIndex); partIndex<progress; ++partIndex) {
-                ResultDeclaration part =  partition.get(partIndex).component;
-                int receiverEnd = ends.get(partIndex) - (ancestorLayers-ancestorIndex)*pace;
-                int senderEnd = part.start + part.length;
+        int ancestorLayers = ancestorStates.size();
+        if (ancestorLayers != 0) {
 
-                if (receiverEnd < senderEnd) { // cold start
-                    int receiverStart = receiverEnd - part.length;
-                    int newSenderStart = part.start % part.pace;
-                    int trigger = (receiverStart - newSenderStart) / part.pace;
+            //int progress = ancestorStates.get(ancestorStates.size() - 1) + 1;
+            int progress = ancestorStates.get(0) + 1;
+            for (int ancestorIndex = 0; ancestorIndex < ancestorStates.size(); ++ancestorIndex) {
 
-                    int transfers = 0;
-                    while (ancestorIndex+1 < ancestorStates.size() && receiverEnd<senderEnd) {
-                        transfers++;
-                        receiverEnd += pace;
+                for (int partIndex = ancestorStates.get(ancestorIndex); partIndex < progress; ++partIndex) {
+                    ResultDeclaration part = partition.get(partIndex).component;
+                    int receiverEnd = ends.get(partIndex) - (ancestorLayers - ancestorIndex) * pace;
+                    int senderEnd = part.start + part.length;
+
+                    if (receiverEnd < senderEnd) { // cold start
+                        int receiverStart = receiverEnd - part.length;
+                        int newSenderStart = part.start % part.pace;
+                        int trigger = (receiverStart - newSenderStart) / part.pace;
+
+                        int transfers = 0;
+                        while (ancestorIndex + 1 < ancestorStates.size() && receiverEnd < senderEnd) {
+                            transfers++;
+                            receiverEnd += pace;
+                        }
+
+                        coldLinks.add(new ColdLink(partition.get(partIndex), transfers, trigger, partIndex));
                     }
-
-                    coldLinks.add(new ColdLink(partition.get(partIndex), transfers, trigger, partIndex));
                 }
-            }
 
-            progress = ancestorStates.get(ancestorIndex);
+                progress = ancestorStates.get(ancestorIndex);
+            }
         }
+
+        // after the system officially begins
+        for (int partIndex=0; partIndex<partition.size(); ++partIndex) {
+            ResultDeclaration part =  partition.get(partIndex).component;
+            int receiverEnd = ends.get(partIndex);
+            int senderEnd = part.start + part.length;
+
+            if (receiverEnd < senderEnd) { // cold start
+                int receiverStart = receiverEnd - part.length;
+                int newSenderStart = part.start % part.pace;
+                int trigger = (receiverStart - newSenderStart) / part.pace;
+
+                int transfers = 0;
+                while (receiverEnd<senderEnd) {
+                    transfers++;
+                    receiverEnd += pace;
+                }
+
+                coldLinks.add(new ColdLink(partition.get(partIndex), transfers, trigger, partIndex));
+            }
+        }
+
+
 
         return coldLinks;
     }

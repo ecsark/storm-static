@@ -106,6 +106,7 @@ public class LibreBufferBuilder implements Serializable {
 
                     for (Map.Entry<Integer, List<Integer>> counterEntry : counterMap.entrySet()) {
 
+
                         final List<Integer> destComponentIndices = counterEntry.getValue();
                         final int trigger = counterEntry.getKey();
 
@@ -461,6 +462,10 @@ public class LibreBufferBuilder implements Serializable {
     }
 
 
+    private int positiveMod(int a, int b) {
+        return (a%b+b)%b;
+    }
+
     // <triggerCounter, List<destComponentIds>>
     protected Map<Integer, List<Integer>> computeForwardingPattern (List<UseLink> links) {
 
@@ -469,12 +474,12 @@ public class LibreBufferBuilder implements Serializable {
         }
 
         // see if there is coincidence
-        final int rotation = links.get(0).pace/links.get(0).component.pace; // there should be at least one element!!
+        //final int rotation = links.get(0).pace/links.get(0).component.pace; // there should be at least one element!!
         ListMap<Integer, UseLink> counterMap = new ListMap<Integer, UseLink>(links,
             new ListMap.KeyExtractable<Integer, UseLink>() {
                 @Override
                 public Integer getKey(UseLink item) {
-                    return ((item.start-item.component.start)%item.pace)/item.component.pace;
+                    return positiveMod(item.start-item.component.start,item.pace)/item.component.pace;
                 }
             });
 
