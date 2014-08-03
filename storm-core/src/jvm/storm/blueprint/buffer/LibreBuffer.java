@@ -51,6 +51,10 @@ public class LibreBuffer extends TupleBuffer {
                 triggerPosition, callbacks));
     }
 
+    public int getLayers() {
+        return layers;
+    }
+
 
     public LibreBuffer(String id, int size, int layers, int pace, int length) {
         this.id = id;

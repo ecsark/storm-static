@@ -148,8 +148,11 @@ public class PatternBoltBuilder extends AutoBoltBuilder {
             });
         }
 
+        cells += buffer.getMemSize();
+
         return buffer;
     }
+
 
     @Override
     public AutoBolt build () {

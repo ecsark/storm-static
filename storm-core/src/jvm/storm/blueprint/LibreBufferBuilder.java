@@ -352,9 +352,79 @@ public class LibreBufferBuilder implements Serializable {
             }
         }
 
+        feedBasedAllocationEvaluation(dependencies, partitioning);
+
         return steps;
     }
 
+    transient int cells = 0;
+
+    private void feedBasedAllocationEvaluation (List<ResultDependency> dependencies,
+                                                List<UseLink> partitioning) {
+
+        // dependencies should be sorted in the ascending order of <finish time, length>
+        // which should be done already
+
+        // partitioning should be sorted in the ascending order of finish time
+        // which should be done already
+
+        List<AggregationDependency> steps = new ArrayList<AggregationDependency>();
+
+        Iterator<ResultDependency> decIter = dependencies.iterator();
+
+        if (decIter.hasNext()) {
+
+            ResultDependency dec = decIter.next();
+
+            for (int i=0; i<partitioning.size(); ++i) {
+                UseLink partition = partitioning.get(i);
+
+                while (partition.start+partition.component.length == dec.declaration.start+dec.declaration.length) {
+                    for (int j=i; j>=0; --j) {
+                        UseLink firstPartition = partitioning.get(j);
+                        if (firstPartition.start == dec.declaration.start) {
+                            steps.add(new AggregationDependency(new AggregationStep(quickList(j,i), i, i), dec));
+                            break;
+                        }
+                    }
+
+                    if (decIter.hasNext()) {
+                        dec = decIter.next();
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // remove redundancy
+        for (int i=0; i<steps.size(); ++i) {
+            List<Integer> inputPositions = steps.get(i).step.getInputPositions();
+
+            for (int j=i+1; j<steps.size(); ++j) {
+                List<Integer> positions = steps.get(j).step.getInputPositions();
+
+                for (int k=0; k < inputPositions.size()-1; ++k)
+                    positions.remove((Integer) inputPositions.get(k));
+            }
+        }
+
+        List<Integer> finishTime = new ArrayList<Integer>();
+        for (UseLink part : partitioning)
+            finishTime.add(part.start+part.component.length);
+
+        int newCells = 0;
+        for (AggregationDependency s : steps) {
+            AggregationStep step = s.step;
+            int triggerTime = finishTime.get(step.getOutputPosition());
+            for (int inputPos : step.getInputPositions()) {
+
+                newCells += Math.ceil((double)(triggerTime - finishTime.get(inputPos))/s.dependencies.declaration.pace);
+            }
+        }
+
+        cells += newCells;
+    }
 
     protected int computeLayerNum(WindowItem window, List<UseLink> partition) {
 

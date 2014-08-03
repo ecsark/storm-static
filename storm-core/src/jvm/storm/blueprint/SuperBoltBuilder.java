@@ -327,7 +327,8 @@ public class SuperBoltBuilder extends AutoBoltBuilder {
 
         cells = 0;
         for (LibreBuffer buf : newBuffers)
-            cells += buf.getSize();
+            cells += buf.getSize()*buf.getLayers();
+        //cells = bufferBuilder.cells;
 
         LibreEntranceBuffer entranceBuffer = new LibreEntranceBuffer(entranceBuffers);
 

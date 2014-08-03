@@ -43,6 +43,9 @@ public class DelegateBuffer extends TupleBuffer {
         callbacks = new ArrayList<WindowResultCallback>();
     }
 
+    public int getMemSize () {
+        return tuples.length;
+    }
 
     public void addCallback (WindowResultCallback callback) {
         callbacks.add(callback);
